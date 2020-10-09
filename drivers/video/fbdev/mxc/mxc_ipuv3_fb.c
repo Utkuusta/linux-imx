@@ -2,6 +2,8 @@
  * Copyright 2004-2016 Freescale Semiconductor, Inc. All Rights Reserved.
  */
 
+/* Copyright 2019 NXP */
+
 /*
  * The code contained herein is licensed under the GNU General Public
  * License. You may obtain a copy of the GNU General Public License
@@ -1078,6 +1080,7 @@ static void mxcfb_check_resolve(struct fb_info *fbi)
 	case IPU_PIX_FMT_GPU16_ST:
 	case IPU_PIX_FMT_GPU16_SRT:
 		mxc_fbi->gpu_sec_buf_off = 0;
+		/* fall-through */
 	case IPU_PIX_FMT_GPU32_SB_ST:
 	case IPU_PIX_FMT_GPU32_SB_SRT:
 	case IPU_PIX_FMT_GPU16_SB_ST:
@@ -1353,6 +1356,7 @@ static int mxcfb_set_par(struct fb_info *fbi)
 			ipu_disp_set_window_pos(
 					mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch,
 					ov_pos_x, ov_pos_y);
+		mxc_fbi_fg->on_the_fly = false;
 		retval = _setup_disp_channel2(mxc_fbi->ovfbi);
 		if (retval) {
 			ipu_uninit_channel(mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch);
@@ -2825,7 +2829,7 @@ static int mxcfb_map_video_memory(struct fb_info *fbi)
 					fbi->fix.smem_len / 2;
 	}
 
-	fbi->screen_base = dma_alloc_writecombine(fbi->device,
+	fbi->screen_base = dma_alloc_wc(fbi->device,
 				fbi->fix.smem_len,
 				(dma_addr_t *)&fbi->fix.smem_start,
 				GFP_DMA | GFP_KERNEL);
@@ -2856,8 +2860,8 @@ static int mxcfb_map_video_memory(struct fb_info *fbi)
  */
 static int mxcfb_unmap_video_memory(struct fb_info *fbi)
 {
-	dma_free_writecombine(fbi->device, fbi->fix.smem_len,
-			      fbi->screen_base, fbi->fix.smem_start);
+	dma_free_wc(fbi->device, fbi->fix.smem_len,
+	            fbi->screen_base, fbi->fix.smem_start);
 	fbi->screen_base = 0;
 	fbi->fix.smem_start = 0;
 	fbi->fix.smem_len = 0;

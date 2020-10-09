@@ -1072,6 +1072,7 @@ static int hdmi_phy_configure(struct mxc_hdmi *hdmi, unsigned char pRep,
 		case 12:
 			hdmi_phy_i2c_write(hdmi, 0x4142, 0x06);
 			hdmi_phy_i2c_write(hdmi, 0x0005, 0x15);
+			break;
 		default:
 			return false;
 		}
@@ -1088,6 +1089,7 @@ static int hdmi_phy_configure(struct mxc_hdmi *hdmi, unsigned char pRep,
 		case 12:
 			hdmi_phy_i2c_write(hdmi, 0x40a2, 0x06);
 			hdmi_phy_i2c_write(hdmi, 0x000a, 0x15);
+			break;
 		default:
 			return false;
 		}
@@ -1104,6 +1106,7 @@ static int hdmi_phy_configure(struct mxc_hdmi *hdmi, unsigned char pRep,
 		case 12:
 			hdmi_phy_i2c_write(hdmi, 0x4002, 0x06);
 			hdmi_phy_i2c_write(hdmi, 0x000f, 0x15);
+			break;
 		default:
 			return false;
 		}
@@ -1697,8 +1700,8 @@ static void mxc_hdmi_enable_video_path(struct mxc_hdmi *hdmi)
 	hdmi_writeb(0x16, HDMI_FC_CH1PREAM);
 	hdmi_writeb(0x21, HDMI_FC_CH2PREAM);
 
-	clkdis = hdmi_readb(HDMI_MC_CLKDIS);
 	/* Enable pixel clock and tmds data path */
+	clkdis = 0x7F;
 	clkdis &= ~HDMI_MC_CLKDIS_PIXELCLK_DISABLE;
 	hdmi_writeb(clkdis, HDMI_MC_CLKDIS);
 
@@ -1959,8 +1962,9 @@ static void mxc_hdmi_cable_connected(struct mxc_hdmi *hdmi)
 
 	case HDMI_EDID_FAIL:
 		mxc_hdmi_default_edid_cfg(hdmi);
-		/* No break here  */
+		/* fall through */
 	case HDMI_EDID_NO_MODES:
+		/* fall through */
 	default:
 		mxc_hdmi_default_modelist(hdmi);
 		break;
@@ -1989,13 +1993,10 @@ static void mxc_hdmi_power_off(struct mxc_dispdrv_handle *disp,
 
 static void mxc_hdmi_cable_disconnected(struct mxc_hdmi *hdmi)
 {
-	u8 clkdis;
-
 	dev_dbg(&hdmi->pdev->dev, "%s\n", __func__);
-	/* Disable All HDMI clock and bypass cec */
-	clkdis = hdmi_readb(HDMI_MC_CLKDIS);
-	clkdis |= 0x5f;
-	hdmi_writeb(clkdis, HDMI_MC_CLKDIS);
+
+	/* Disable All HDMI clock */
+	hdmi_writeb(0xff, HDMI_MC_CLKDIS);
 
 	mxc_hdmi_phy_disable(hdmi);
 
@@ -2265,10 +2266,11 @@ static void mxc_hdmi_setup(struct mxc_hdmi *hdmi, unsigned long event)
 	hdmi_video_csc(hdmi);
 	hdmi_video_sample(hdmi);
 
+	/* delay 20ms before tmds start work */
+	msleep(20);
 	mxc_hdmi_clear_overflow(hdmi);
 
 	dev_dbg(&hdmi->pdev->dev, "%s exit\n\n", __func__);
-
 }
 
 /* Wait until we are registered to enable interrupts */
@@ -2315,6 +2317,7 @@ static int mxc_hdmi_fb_event(struct notifier_block *nb,
 		return 0;
 
 	switch (val) {
+
 	case FB_EVENT_FB_REGISTERED:
 		dev_dbg(&hdmi->pdev->dev, "event=FB_EVENT_FB_REGISTERED\n");
 		mxc_hdmi_fb_registered(hdmi);
