@@ -28,6 +28,15 @@
 
 #include "sgtl5000.h"
 
+//ERHANY
+#include <linux/regmap.h>
+#include <linux/mfd/syscon.h>
+#include <linux/mfd/syscon/imx6q-iomuxc-gpr.h>
+#include <linux/clk.h>
+#include <linux/clk-provider.h>
+#define DEBUG
+
+
 #define SGTL5000_DAP_REG_OFFSET	0x0100
 #define SGTL5000_MAX_REG_OFFSET	0x013A
 
@@ -1596,6 +1605,55 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		goto disable_regs;
 	}
 
+//ERHANY
+	{
+		struct regmap *gpr;
+			gpr = syscon_regmap_lookup_by_compatible("fsl,imx6ul-iomuxc-gpr");
+			if (IS_ERR(gpr)) {
+				dev_err(&client->dev, "cannot find iomuxc registers\n");
+				return PTR_ERR(gpr);
+			}
+
+			regmap_update_bits(gpr, IOMUXC_GPR1, MCLK_DIR(2),
+					   MCLK_DIR(2));
+			dev_err(&client->dev, "mclk2 direction set\n");
+	}
+
+	/*{
+		struct clk *busclk = devm_clk_get(&client->dev, "bus0");
+		if (IS_ERR(busclk)) {
+			ret = PTR_ERR(busclk);
+			dev_err(&client->dev, "Failed to get busclk: %d\n", ret);
+		} else {
+			ret = clk_prepare_enable(busclk);
+			if (ret) {
+				dev_err(&client->dev, "Error enabling busclk %d\n", ret);
+			}
+		}
+
+		busclk = devm_clk_get(&client->dev, "bus1");
+		if (IS_ERR(busclk)) {
+			ret = PTR_ERR(busclk);
+			dev_err(&client->dev, "Failed to get busclk1: %d\n", ret);
+		} else {
+			ret = clk_prepare_enable(busclk);
+			if (ret) {
+				dev_err(&client->dev, "Error enabling busclk1 %d\n", ret);
+			}
+		}
+
+		busclk = devm_clk_get(&client->dev, "bus2");
+		if (IS_ERR(busclk)) {
+			ret = PTR_ERR(busclk);
+			dev_err(&client->dev, "Failed to get busclk2: %d\n", ret);
+		} else {
+			ret = clk_prepare_enable(busclk);
+			if (ret) {
+				dev_err(&client->dev, "Error enabling busclk2 %d\n", ret);
+			}
+		}
+	}*/
+
 	sgtl5000->mclk = devm_clk_get(&client->dev, NULL);
 	if (IS_ERR(sgtl5000->mclk)) {
 		ret = PTR_ERR(sgtl5000->mclk);
@@ -1613,10 +1671,12 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	if (ret) {
 		dev_err(&client->dev, "Error enabling clock %d\n", ret);
 		goto disable_regs;
+	}else {
+		dev_err(&client->dev, "mclock ready %d\n", ret);
 	}
 
 	/* Need 8 clocks before I2C accesses */
-	udelay(1);
+	udelay(10);
 
 	/* read chip information */
 	ret = regmap_read(sgtl5000->regmap, SGTL5000_CHIP_ID, &reg);

@@ -140,6 +140,24 @@ struct snvs_lp {
 	u32 pwr_glitch_det;	/* Power Glitch Detector */
 	u32 gen_purpose;
 	u32 zmk[8];		/* Zeroizable Master Key */
+
+	u32 reserved;
+	u32 gpr[4]; 			//90h - 9Ch SNVS_LP General Purposes 0 .. 3 (LPGPR0_30 - LPGPR0_33) 32 RW 00000000h
+	u32 tamper_det_cfg2; 	//A0h SNVS_LP Tamper Detectors Config 2 (LPTDC2R) 32 RW 00000000h
+	u32 tamper_det_status; 	//A4h SNVS_LP Tamper Detectors Status (LPTDSR) 32 W1C 00000000h
+	u32 tamper_filt_cfg1; 	//A8h SNVS_LP Tamper Glitch Filter 1 Configuration (LPTGF1CR) 32 RW 00000000h
+	u32 tamper_filt_cfg2; 	//ACh SNVS_LP Tamper Glitch Filter 2 Configuration (LPTGF2CR) 32 RW 00000000h
+	u32 reserved2[4];
+	u32 active_cfg[5]; 	//C0h SNVS_LP Active Tamper 1 Configuration (LPAT1CR) 32 WO 00000000h
+						//C4h SNVS_LP Active Tamper 2 Configuration (LPAT2CR) 32 WO 00000000h
+						//C8h SNVS_LP Active Tamper 3 Configuration (LPAT3CR) 32 WO 00000000h
+						//CCh SNVS_LP Active Tamper 4 Configuration (LPAT4CR) 32 WO 00000000h
+						//D0h SNVS_LP Active Tamper 5 Configuration (LPAT5CR) 32 WO 00000000h
+	u32 reserved3[3];
+	u32 active_ctl; //E0h SNVS_LP Active Tamper Control (LPATCTLR) 32 RW 00000000h
+	u32 active_clk_ctl; //E4h SNVS_LP Active Tamper Clock Control (LPATCLKR) 32 RW 00000000h
+	u32 active_rt_ctl1; //E8h SNVS_LP Active Tamper Routing Control 1 (LPATRC1R) 32 RW 00000000h
+	u32 active_rt_ctl2; //ECh SNVS_LP Active Tamper Routing Control 2 (LPATRC2R) 32 RW 00000000h
 };
 
 #define LP_LOCK_MKEYSEL_LCK	0x00000200
@@ -229,11 +247,38 @@ struct snvs_lp {
 struct snvs_full {
 	struct snvs_hp hp;
 	struct snvs_lp lp;
-	u32 rsvd[731];		/* deadspace 0x08c-0xbf7 */
+
+	/**
+	 * 25 u32 added for tamper in lp erhany
+	 */
+
+	u32 rsvd[731-25];		/* deadspace 0x08c-0xbf7 */
 
 	/* Version / Revision / Option ID space - end of register page */
 	u32 vid;		/* 0xbf8 HP Version ID (VID 1) */
 	u32 opt_rev;		/* 0xbfc HP Options / Revision (VID 2) */
 };
 
+/*
+ * SNVS Expanded Register
+ */
+struct snvs_expanded {
+	u32 dtocr;
+	u32 dtmr;
+	u32 dtrr;
+	u32 dmcr;
+	u32 tpctrl0;
+	u32 tpctrl1;
+	u32 tpctrl2;
+	u32 tpctrl3;
+	u32 tpctrl4;
+	u32 tpctrl5;
+	u32 tpctrl6;
+	u32 tpctrl7;
+	u32 tpctrl8;
+	u32 tpctrl9;
+	u32 dslr;
+	u32 dhlr;
+	u32 smrtn;
+};
 #endif /* SNVSREGS_H */

@@ -38,6 +38,7 @@ obj-$(CONFIG_SND_SOC_FSL_ASOC_CARD) += snd-soc-fsl-asoc-card.o
 snd-soc-fsl-hdmi-objs := fsl_hdmi.o
 obj-$(CONFIG_SND_SOC_FSL_ASRC) += snd-soc-fsl-asrc.o
 obj-$(CONFIG_SND_SOC_FSL_DSP) += snd-soc-fsl-dsp.o
+EXTRA_CFLAGS		+= -DDEBUG
 obj-$(CONFIG_SND_SOC_FSL_DSP_AUDIOMIX) += snd-soc-fsl-dsp-audiomix.o
 obj-$(CONFIG_SND_SOC_FSL_SAI) += snd-soc-fsl-sai.o
 obj-$(CONFIG_SND_SOC_FSL_SSI) += snd-soc-fsl-ssi.o

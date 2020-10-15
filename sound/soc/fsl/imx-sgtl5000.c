@@ -129,7 +129,8 @@ static int imx_sgtl5000_probe(struct platform_device *pdev)
 		goto fail;
 	}
 
-	data->codec_clk = clk_get(&codec_dev->dev, NULL);
+	//data->codec_clk = clk_get(&codec_dev->dev, NULL);
+	data->codec_clk = clk_get(&ssi_pdev->dev, "mclk1");
 	if (IS_ERR(data->codec_clk)) {
 		ret = PTR_ERR(data->codec_clk);
 		goto fail;

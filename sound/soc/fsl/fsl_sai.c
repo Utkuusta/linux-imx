@@ -28,6 +28,12 @@
 #include "fsl_sai.h"
 #include "imx-pcm.h"
 
+//ERHANY
+#include <linux/clkdev.h>
+#include <linux/i2c.h>
+#include <linux/device.h>
+#define DEBUG
+
 #define FSL_SAI_FLAGS (FSL_SAI_CSR_SEIE |\
 		       FSL_SAI_CSR_FEIE)
 
@@ -271,6 +277,8 @@ static int fsl_sai_set_mclk_rate(struct snd_soc_dai *dai, int clk_id,
 		dev_err(dai->dev, "failed to set clock rate (%u): %d\n",
 			freq, ret);
 
+	dev_err(dai->dev, "dai set clock rate (%u): %d\n",
+					freq, ret);
 	return ret;
 }
 
@@ -321,6 +329,7 @@ static int fsl_sai_set_dai_sysclk(struct snd_soc_dai *cpu_dai,
 	if (ret)
 		dev_err(cpu_dai->dev, "Cannot set rx sysclk: %d\n", ret);
 
+	dev_err(cpu_dai->dev, "dai set sys clock: %d, %u\n", clk_id, freq);
 	return ret;
 }
 
@@ -544,7 +553,7 @@ static int fsl_sai_set_bclk(struct snd_soc_dai *dai, bool tx, u32 freq)
 		if (ret != 0 && clk_rate / ret < 1000)
 			continue;
 
-		dev_dbg(dai->dev,
+		dev_err(dai->dev,
 			"ratio %d for freq %dHz based on clock %ldHz\n",
 			ratio, freq, clk_rate);
 
@@ -1410,6 +1419,43 @@ static int fsl_sai_probe(struct platform_device *pdev)
 		}
 	}
 
+	{
+		struct device_node *codec_np;
+		struct i2c_client *codec_dev;
+		codec_np = np = of_find_compatible_node(NULL, NULL, "fsl,sgtl5000"); //of_parse_phandle(np, "audio-codec", 0);
+		if (!codec_np) {
+			dev_err(&pdev->dev, "phandle missing or invalid\n");
+		} else {
+			codec_dev = of_find_i2c_device_by_node(codec_np);
+			if (!codec_dev) {
+				dev_err(&pdev->dev, "failed to find codec platform device\n");
+			} else {
+//				struct clk_lookup sata_refclk_lookup =
+//						CLKDEV_INIT(dev_name(&(codec_dev->dev)), "mclk", sai->mclk_clk[1]);
+//				clkdev_add(&sata_refclk_lookup);
+				struct clk *clk;
+				struct device_node *npx;
+				void __iomem *base;
+				npx = of_find_compatible_node(NULL, NULL, "fsl,imx6ul-anatop");
+				base = of_iomap(npx, 0);
+				of_node_put(npx);
+				clk = clk_register_divider(&pdev->dev, "mxc_sai_mclk",
+						__clk_get_name(sai->mclk_clk[1]), CLK_SET_RATE_PARENT | CLK_OPS_PARENT_ENABLE,
+						base + 0x7c, 30, 3, 0, NULL);
+				if (IS_ERR(clk)) {
+					ret = PTR_ERR(clk);
+					dev_err(&pdev->dev, "failed to register mclk: %d %s\n", ret, __clk_get_name(sai->mclk_clk[1]));
+				} else {
+					ret = of_clk_add_provider(pdev->dev.of_node, of_clk_src_simple_get, sai->mclk_clk[1]);
+					if (ret)
+						dev_err(&pdev->dev, "of_clk_add_provider missing or invalid node %d\n", ret);
+
+					dev_err(&pdev->dev, "added clock to %s %s\n", dev_name(&(pdev->dev)), __clk_get_name(sai->mclk_clk[1]));
+				}
+			}
+		}
+	}
+
 	sai->pll8k_clk = devm_clk_get(&pdev->dev, "pll8k");
 	if (IS_ERR(sai->pll8k_clk))
 		sai->pll8k_clk = NULL;
@@ -1516,6 +1562,7 @@ static int fsl_sai_probe(struct platform_device *pdev)
 
 		regmap_update_bits(gpr, IOMUXC_GPR1, MCLK_DIR(index),
 				   MCLK_DIR(index));
+		dev_err(&pdev->dev, "mclk direction set\n");
 	}
 
 	if (of_find_property(np, "fsl,sai-mclk-direction-output", NULL) &&
@@ -1561,6 +1608,7 @@ static int fsl_sai_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	dev_err(&pdev->dev, "registering sai %d\n", sai->soc->imx);
 	if (sai->soc->imx)
 		return imx_pcm_platform_register(&pdev->dev);
 	else
