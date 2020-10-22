@@ -79,6 +79,7 @@ struct snvs_hp {
 #define HP_SECVIO_INTEN_SRC2	0x00000004
 #define HP_SECVIO_INTEN_SRC1	0x00000002
 #define HP_SECVIO_INTEN_SRC0	0x00000001
+#define HP_SECVIO_INTEN_SRC_LP	0x80000000
 #define HP_SECVIO_INTEN_ALL	0x8000003f
 
 #define HP_SECVIO_ICTL_CFG_SHIFT	30
@@ -118,7 +119,7 @@ struct snvs_hp {
 #define HP_SECVIOST_SECVIO2		0x00000004
 #define HP_SECVIOST_SECVIO1		0x00000002
 #define HP_SECVIOST_SECVIO0		0x00000001
-#define HP_SECVIOST_SECVIOMASK		0x0000003f
+#define HP_SECVIOST_SECVIOMASK		0x8000003f
 
 /*
  * SNVS Low Power Domain
@@ -139,7 +140,7 @@ struct snvs_lp {
 	u32 smc_lsb;		/* Secure Monotonic Counter LSB */
 	u32 pwr_glitch_det;	/* Power Glitch Detector */
 	u32 gen_purpose;
-	u32 zmk[8];		/* Zeroizable Master Key */
+	u8 zmk[32];		/* Zeroizable Master Key */
 
 	u32 reserved;
 	u32 gpr[4]; 			//90h - 9Ch SNVS_LP General Purposes 0 .. 3 (LPGPR0_30 - LPGPR0_33) 32 RW 00000000h

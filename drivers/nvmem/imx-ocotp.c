@@ -614,6 +614,44 @@ static int imx_ocotp_probe(struct platform_device *pdev)
 	return PTR_ERR_OR_ZERO(nvmem);
 }
 
+#define OCOTP_SRK_OFF	0xC00
+#define OCOTP_SRKn(n)	(OCOTP_SRK_OFF + (n) * 0x10)
+// Added for Inventron SOM
+int fsl_otp_read_hash(u8 *fuseHash) {
+	u8 ret;
+	unsigned int index = 14*8; //GP6
+	unsigned int phy_index;
+	u32 value = 0, i;
+	ret = clk_prepare_enable(otp_clk);
+	if (ret)
+		return -ENODEV;
+
+	mutex_lock(&otp_mutex);
+	pr_err("FuseHash:");
+	for(i=0; i<8; i++, index++) {
+		phy_index = fsl_otp_word_physical(fsl_otp, index);
+		fsl_otp->set_otp_timing();
+		ret = otp_wait_busy(0);
+		if (ret)
+			goto out;
+
+		value = __raw_readl(otp_base + HW_OCOTP_CUST_N(phy_index));
+		pr_err("0x%04x ", value);
+		//memcpy(&fuseHash[i*4], &value, sizeof(value));
+		fuseHash[i*4+ 3] = value & 0xFF;
+		fuseHash[i*4 + 2] = (value & 0xFF00) >> 8;
+		fuseHash[i*4 + 1] = (value & 0xFF0000) >> 16;
+		fuseHash[i*4] = (value & 0xFF000000) >> 24;
+	}
+	pr_err("\n");
+
+out:
+	mutex_unlock(&otp_mutex);
+	clk_disable_unprepare(otp_clk);
+	return 0;
+}
+EXPORT_SYMBOL(fsl_otp_read_hash);
+
 static struct platform_driver imx_ocotp_driver = {
 	.probe	= imx_ocotp_probe,
 	.driver = {

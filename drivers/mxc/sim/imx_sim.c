@@ -1534,7 +1534,7 @@ static long sim_ioctl(struct file *file,
 			sim_set_bwt(sim, 0);
 			sim_rx_irq_disable(sim);
 			errval = -SIM_E_TIMEOUT;
-			break;
+			goto copy_data;
 		}
 
 copy_data:
@@ -1906,8 +1906,6 @@ static struct platform_driver sim_driver = {
 			},
 	.probe = sim_probe,
 	.remove = sim_remove,
-	.suspend = sim_suspend,
-	.resume = sim_resume,
 	.id_table = imx_sim_devtype,
 };
 
