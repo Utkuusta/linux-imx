@@ -17,6 +17,7 @@
 #include <linux/usb/otg-fsm.h>
 #include <linux/usb/otg.h>
 #include <linux/usb/role.h>
+#include <linux/usb/chipidea.h>
 #include <linux/ulpi/interface.h>
 
 /******************************************************************************

@@ -77,6 +77,8 @@
 #define IMX_OCOTP_READ_LOCKED_VAL	0xBADABADA
 
 static DEFINE_MUTEX(ocotp_mutex);
+static void __iomem *otp_base;
+static struct clk *otp_clk;
 
 struct ocotp_priv {
 	struct device *dev;
@@ -594,10 +596,12 @@ static int imx_ocotp_probe(struct platform_device *pdev)
 	priv->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(priv->base))
 		return PTR_ERR(priv->base);
+	otp_base = priv->base;
 
 	priv->clk = devm_clk_get(dev, NULL);
 	if (IS_ERR(priv->clk))
 		return PTR_ERR(priv->clk);
+	otp_clk = priv->clk;
 
 	priv->params = of_device_get_match_data(&pdev->dev);
 	imx_ocotp_nvmem_config.size = 4 * priv->params->nregs;
@@ -625,8 +629,7 @@ int fsl_otp_read_hash(u8 *fuseHash) {
 	ret = clk_prepare_enable(otp_clk);
 	if (ret)
 		return -ENODEV;
-
-	mutex_lock(&otp_mutex);
+	mutex_lock(&ocotp_mutex);
 	pr_err("FuseHash:");
 	for(i=0; i<8; i++, index++) {
 		phy_index = fsl_otp_word_physical(fsl_otp, index);
@@ -645,8 +648,8 @@ int fsl_otp_read_hash(u8 *fuseHash) {
 	}
 	pr_err("\n");
 
-out:
-	mutex_unlock(&otp_mutex);
+ out:
+	mutex_unlock(&ocotp_mutex);
 	clk_disable_unprepare(otp_clk);
 	return 0;
 }
