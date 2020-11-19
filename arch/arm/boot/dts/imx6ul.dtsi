@@ -707,9 +707,10 @@
 				compatible = "fsl,imx6q-caam-secvio";
 				interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
 				jtag-tamper = "disabled";
-				watchdog-tamper = "enabled";
-				internal-boot-tamper = "enabled";
+				watchdog-tamper = "disabled";
+				internal-boot-tamper = "disabled";
 				external-pin-tamper = "disabled";
+				lp-int-enable = "enabled";				
 			};
 
 			caam_snvs: caam-snvs@20cc000 {

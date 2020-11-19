@@ -24,10 +24,8 @@
 		#reset-cells = <0>;
 	};*/
 
-	regulators {
-		reg_sd1_vmmc: sd1_regulator {
-			status = "disabled";
-		};
+	reg_sd1_vmmc: sd1_regulator {
+		status = "disabled";
 	};
 		
 	usdhc1_pwrseq: usdhc1_pwrseq {
