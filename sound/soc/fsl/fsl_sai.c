@@ -1418,7 +1418,7 @@ static int fsl_sai_probe(struct platform_device *pdev)
 			sai->mclk_clk[i] = NULL;
 		}
 	}
-
+#ifdef CONFIG_SOC_IMX6UL
 	{
 		struct device_node *codec_np;
 		struct i2c_client *codec_dev;
@@ -1455,7 +1455,7 @@ static int fsl_sai_probe(struct platform_device *pdev)
 			}
 		}
 	}
-
+#endif
 	sai->pll8k_clk = devm_clk_get(&pdev->dev, "pll8k");
 	if (IS_ERR(sai->pll8k_clk))
 		sai->pll8k_clk = NULL;
