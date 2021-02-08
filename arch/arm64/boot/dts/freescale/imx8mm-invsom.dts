@@ -538,7 +538,7 @@
 		reg = <0x48>;
 		hpd-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
-		// GPIO1_IO07 -> IRQ_HDMI , hangi durumda irq gelmesi gerekiyor? öğren
+		// GPIO1_IO07 -> IRQ_HDMI , hangi durumda irq gelmesi gerekiyor? In default, this pin is configured as interrupt request (IRQ) output.
 		pinctrl-0 = <&pinctrl_ccm1>;
 		clocks = <&clk IMX8MM_CLK_CLKO1>;
 		clock-names = "hdmi_clk";
@@ -706,7 +706,7 @@
 
 	pinctrl_pcie0: pcie0grp {
 		fsl,pins = <
-			MX8MM_IOMUXC_SAI5_RXC_GPIO3_IO20	0x61 /* open drain, pull up */ // CLKREQ, gpio??
+			MX8MM_IOMUXC_UART4_RXD_PCIE1_CLKREQ_B	0x61 /* open drain, pull up */ // CLKREQ
 			MX8MM_IOMUXC_SAI5_RXD1_GPIO3_IO22	0x41  // W_DISABLE
 			MX8MM_IOMUXC_SAI5_RXD0_GPIO3_IO21	0x41  // PERST0
 		>;
@@ -811,13 +811,13 @@
 		>;
 	};
 
-	pinctrl_uart4: uart4grp { // rs485
+	/* pinctrl_uart4: uart4grp { // rs485
 		fsl,pins = <
 			MX8MM_IOMUXC_UART4_RXD_UART4_DCE_RX 		0x030b1
 			MX8MM_IOMUXC_UART4_TXD_UART4_DCE_TX 		0x130b1
 			MX8MM_IOMUXC_SAI1_RXD7_GPIO4_IO9 		0x030b1 // rs485 en
 		>;
-	};
+	}; */
 
 	pinctrl_can: cangrp {  // can interrupt
 		fsl,pins = <
