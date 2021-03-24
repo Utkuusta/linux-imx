@@ -662,8 +662,10 @@
 		>;
 	};
 
-	pinctl_fec1_reset : fec1_resetgrp {
+	pinctrl_fec1_reset : fec1_resetgrp {
+		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO11_GPIO1_IO11         	0x19 // ENET_nRST
+		>;
 	};
 
 	pinctrl_flexspi0: flexspi0grp {
@@ -706,7 +708,7 @@
 
 	pinctrl_pcie0: pcie0grp {
 		fsl,pins = <
-			MX8MM_IOMUXC_UART4_RXD_PCIE1_CLKREQ_B	0x61 /* open drain, pull up */ // CLKREQ
+			MX8MM_IOMUXC_SAI5_RXC_GPIO3_IO20	0x61 /* open drain, pull up */ // CLKREQ
 			MX8MM_IOMUXC_SAI5_RXD1_GPIO3_IO22	0x41  // W_DISABLE
 			MX8MM_IOMUXC_SAI5_RXD0_GPIO3_IO21	0x41  // PERST0
 		>;
@@ -768,21 +770,25 @@
 	pinctrl_pwm1: pwm1grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SPDIF_EXT_CLK_PWM1_OUT     0xd6
+		>;
 	}
 
 	pinctrl_pwm2: pwm2grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SPDIF_RX_PWM2_OUT     	0xd6
+		>;
 	}
 
 	pinctrl_pwm3: pwm3grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SPDIF_TX_PWM3_OUT     	0xd6
+		>;
 	}
 
 	pinctrl_pwm4: pwm4grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SAI3_MCLK_PWM4_OUT     	0xd6
+		>;
 	}
 
 	pinctrl_uart1: uart1grp {
