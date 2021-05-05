@@ -194,9 +194,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		ethphy0: ethernet-phy@0 {
+		ethphy0: ethernet-phy@3 {
 			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <0>;
+			reg = <3>;
 			at803x,eee-disabled;
 			at803x,vddio-1p8v;
 		};
@@ -753,7 +753,7 @@
 			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		   // MIC_EN 6ul dts içindeki inveventhandler içine tanımlanacak.
 			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6 	   // AMP_EN
 		>;
-	}
+	};
 
 	pinctrl_sai1_dsd: sai1grp {
 		fsl,pins = <
@@ -765,31 +765,31 @@
 			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		   // MIC_EN
 			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6 	   // AMP_EN
 		>;
-	}
+	};
 
 	pinctrl_pwm1: pwm1grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SPDIF_EXT_CLK_PWM1_OUT     0xd6
 		>;
-	}
+	};
 
 	pinctrl_pwm2: pwm2grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SPDIF_RX_PWM2_OUT     	0xd6
 		>;
-	}
+	};
 
 	pinctrl_pwm3: pwm3grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SPDIF_TX_PWM3_OUT     	0xd6
 		>;
-	}
+	};
 
 	pinctrl_pwm4: pwm4grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SAI3_MCLK_PWM4_OUT     	0xd6
 		>;
-	}
+	};
 
 	pinctrl_uart1: uart1grp {
 		fsl,pins = <
@@ -829,7 +829,7 @@
 		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8	   0x1f
 		>;
-	}
+	};
 
 	pinctrl_ecspi2: ecspi2grp { // CAN
 		fsl,pins = <
@@ -838,7 +838,7 @@
 		        MX8MM_IOMUXC_ECSPI2_SCLK_ECSPI2_SCLK       0x140
 		        MX8MM_IOMUXC_ECSPI2_SS0_ECSPI2_SS0	   0x140
 		>;
-	}
+	};
 
 	pinctrl_ccm1: ccm1grp { // clockoutput
 		fsl,pins = <
