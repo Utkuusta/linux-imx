@@ -30,12 +30,13 @@
 	leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio_led &pinctrl_ccm2>;
-		clocks = <&clk IMX8MM_CLK_CLKO2>; // ccm2
-		clock-names = "enet_mclk";
-		assigned-clocks = <&clk IMX8MM_CLK_CLKO2>;
-		assigned-clock-parents = <&clk IMX8MM_CLK_24M>;
-		assigned-clock-rates = <12000000>;
+		//pinctrl-0 = <&pinctrl_gpio_led &pinctrl_ccm2>; // daha sonra kullanılacak
+		pinctrl-0 = <&pinctrl_gpio_led>;
+		//clocks = <&clk IMX8MM_CLK_CLKO2>; // ccm2
+		//clock-names = "enet_mclk";
+		//assigned-clocks = <&clk IMX8MM_CLK_CLKO2>;
+		//assigned-clock-parents = <&clk IMX8MM_CLK_24M>;
+		//assigned-clock-rates = <12000000>;
 		status {
 			label = "status";
 			gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
@@ -168,7 +169,7 @@
 &ecspi2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
-	status = "okay";
+	status = "disabled";
 
 	mcp251xfd: can@0 {
 		compatible = "microchip,mcp251xfd";
@@ -233,25 +234,25 @@
 &pwm1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm1>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm2>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm3 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm3>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm4 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm4>;
-	status = "okay";
+	status = "disabled";
 };
 
 &sai2 {
@@ -326,6 +327,12 @@
 	pinctrl-0 = <&pinctrl_uart4>; // enable pinine bakılacak.
 	rs485-rx-during-tx;
 	linux,rs485-enabled-at-boot-time;
+	status = "disabled";
+};
+
+&usbotg1 { // hangisi kullanılmalı?
+	dr_mode = "host";
+	disable-over-current;
 	status = "okay";
 };
 
@@ -343,7 +350,7 @@
 &usbotg2 {
 	dr_mode = "host";
 	disable-over-current;
-	status = "okay";
+	status = "disabled";
 };
 
 &usdhc1 { 				// wifi/bt
@@ -389,7 +396,7 @@
 &flexspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexspi0>;
-	status = "okay";
+	status = "disabled";
 
 	flash0: mt25qu256aba@0 {
 		reg = <0>;
@@ -539,7 +546,6 @@
 		hpd-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		// GPIO1_IO07 -> IRQ_HDMI , hangi durumda irq gelmesi gerekiyor? In default, this pin is configured as interrupt request (IRQ) output.
-		pinctrl-0 = <&pinctrl_ccm1>;
 		clocks = <&clk IMX8MM_CLK_CLKO1>;
 		clock-names = "hdmi_clk";
 		assigned-clocks = <&clk IMX8MM_CLK_CLKO1>;
@@ -598,7 +604,7 @@
 		compatible = "nxp,pcf85063a";
 		reg = <0x51>;
 		quartz-load-femtofarads = <7000>;
-	}
+	};
 };
 
 &i2c3 {
@@ -635,6 +641,10 @@
 &iomuxc {
 	pinctrl-names = "default";
 
+	// MX8MM_IOMUXC_SD1_DATA5_GPIO2_IO7
+	// MX8MM_IOMUXC_SD1_DATA6_GPIO2_IO8
+	// MX8MM_IOMUXC_SD1_DATA7_GPIO2_IO9
+	
 	pinctrl_csi1: csi_grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SAI1_RXD3_GPIO4_IO5		0x19 // camera pwdn
@@ -751,7 +761,7 @@
 			MX8MM_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0	0x17088
 			MX8MM_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0	0x17088
 			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		   // MIC_EN 6ul dts içindeki inveventhandler içine tanımlanacak.
-			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6 	   // AMP_EN
+			// MX8MM_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7 	   // AMP_EN
 		>;
 	};
 
@@ -782,6 +792,7 @@
 	pinctrl_pwm3: pwm3grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SPDIF_TX_PWM3_OUT     	0xd6
+			
 		>;
 	};
 
@@ -797,7 +808,7 @@
 			MX8MM_IOMUXC_UART1_TXD_UART1_DCE_TX	0x140
 			MX8MM_IOMUXC_UART3_RXD_UART1_DCE_CTS_B	0x140
 			MX8MM_IOMUXC_UART3_TXD_UART1_DCE_RTS_B	0x140
-			MX8MM_IOMUXC_SD1_DATA4_GPIO2_IO6	0x19
+			//MX8MM_IOMUXC_SD1_DATA4_GPIO2_IO6	0x19
 		>;
 	};
 
@@ -852,9 +863,10 @@
 		>;
 	};
 
-	pinctrl_usb_otg1_id: usbotg1idgrp {
+	pinctrl_usb_otg1_id: usbotg1idgrp { // ? 
 		fsl,pins = <
-			MX8MM_IOMUXC_GPIO1_IO10_USB1_OTG_ID	0x17059
+			MX8MM_IOMUXC_GPIO1_IO12_USB1_OTG_PWR	0x17059
+			MX8MM_IOMUXC_GPIO1_IO13_USB1_OTG_OC     0x17059
 		>;
 	};
 
