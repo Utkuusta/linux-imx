@@ -187,7 +187,7 @@
 	pinctrl-0 = <&pinctrl_fec1 &pinctl_fec1_reset>;
 	phy-mode = "rgmii-id";
 	phy-handle = <&ethphy0>;
-	phy-reset-gpios = <&gpio1 11 0>;
+	phy-reset-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	fsl,magic-packet;
 	status = "okay";
 
@@ -322,13 +322,13 @@
 	status = "okay";
 };
 
-&uart4 {
+/*&uart4 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart4>; // enable pinine bakılacak.
 	rs485-rx-during-tx;
 	linux,rs485-enabled-at-boot-time;
 	status = "disabled";
-};
+};*/
 
 &usbotg1 { // hangisi kullanılmalı?
 	dr_mode = "host";
@@ -533,9 +533,9 @@
 		compatible = "fsl,sgtl5000";
 		#sound-dai-cells = <0>;
 		reg = <0x0a>;
-		VDDA-supply = <&reg_vref_3v3>;
-		VDDIO-supply = <&reg_vref_3v3>;
-		VDDD-supply = <&reg_vref_1v8>;
+		//VDDA-supply = <&reg_vref_3v3>;
+		//VDDIO-supply = <&reg_vref_3v3>;
+		//VDDD-supply = <&reg_vref_1v8>;
 		clocks = <&sai1>;
 		status = "okay";
 	};
@@ -609,9 +609,8 @@
 
 &i2c3 {
 	clock-frequency = <100000>;
-	pinctrl-names = "default", "gpio";
+	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3>;
-	pinctrl-1 = <&pinctrl_i2c3_gpio>;
 	scl-gpios = <&gpio5 18 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpio5 19 GPIO_ACTIVE_HIGH>;
 	status = "okay";
