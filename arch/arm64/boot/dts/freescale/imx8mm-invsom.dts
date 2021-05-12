@@ -37,10 +37,12 @@
 		//assigned-clocks = <&clk IMX8MM_CLK_CLKO2>;
 		//assigned-clock-parents = <&clk IMX8MM_CLK_24M>;
 		//assigned-clock-rates = <12000000>;
+		status = "okay";
 		status {
 			label = "status";
 			gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
+			linux,default-trigger = "heartbeat";
 		};
 	};
 
@@ -97,6 +99,24 @@
 	//	enable-active-high;
 	//};
 
+	reg_vref_3v3: regulator-vref {
+	  	compatible = "regulator-fixed";
+	  	regulator-name = "vref-3v3";
+	  	regulator-min-microvolt = <3300000>;
+	  	regulator-max-microvolt = <3300000>;
+	  	regulator-always-on;
+	 	regulator-boot-on;		  
+	};
+	
+	reg_vref_1v8: regulator-vref-1v8 { /* V1.8 */
+		compatible = "regulator-fixed";
+		regulator-name = "vref-1v8";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+	  	regulator-boot-on;		  
+	};
+
 	bt_sco_codec: bt_sco_codec {
 		#sound-dai-cells = <0>;
 		compatible = "linux,bt-sco";
@@ -109,6 +129,7 @@
 		simple-audio-card,bitclock-inversion;
 		simple-audio-card,frame-master = <&btcpu>;
 		simple-audio-card,bitclock-master = <&btcpu>;
+		status = "disabled";
 
 		btcpu: simple-audio-card,cpu {
 			sound-dai = <&sai3>;
@@ -149,6 +170,7 @@
 		compatible = "fsl,imx-audio-micfil";
 		model = "imx-audio-micfil";
 		cpu-dai = <&micfil>;
+		status = "okay";
 	};
 };
 
@@ -158,7 +180,7 @@
 
 &csi1_bridge {
 	fsl,mipi-mode;
-	status = "okay";
+	status = "disabled";
 	port {
 		csi1_ep: endpoint {
 			remote-endpoint = <&csi1_mipi_ep>;
@@ -216,7 +238,7 @@
 	clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
 	ext_osc = <1>;
 	reserved-region = <&rpmsg_reserved>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pcie0_ep{
@@ -271,13 +293,12 @@
 	assigned-clocks = <&clk IMX8MM_CLK_SAI3>;
 	assigned-clock-parents = <&clk IMX8MM_AUDIO_PLL1_OUT>;
 	assigned-clock-rates = <24576000>;
-	status = "okay";
+	status = "disabled";
 };
 
 &sai1 {
-	pinctrl-names = "default", "dsd";
+	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai1>;
-	pinctrl-1 = <&pinctrl_sai1_dsd>;
 	assigned-clocks = <&clk IMX8MM_CLK_SAI1>;
 	assigned-clock-parents = <&clk IMX8MM_AUDIO_PLL1_OUT>;
 	assigned-clock-rates = <0>, <11851852>;
@@ -304,7 +325,7 @@
 	assigned-clock-parents = <&clk IMX8MM_SYS_PLL1_80M>;
 	fsl,uart-has-rtscts;
 	resets = <&modem_reset>;
-	status = "okay";
+	status = "disabled";
 };
 
 &uart2 { /* console */
@@ -330,12 +351,6 @@
 	status = "disabled";
 };*/
 
-&usbotg1 { // hangisi kullanılmalı?
-	dr_mode = "host";
-	disable-over-current;
-	status = "okay";
-};
-
 &usbotg1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usb_otg1_id>;
@@ -350,7 +365,7 @@
 &usbotg2 {
 	dr_mode = "host";
 	disable-over-current;
-	status = "disabled";
+	status = "okay";
 };
 
 &usdhc1 { 				// wifi/bt
@@ -363,7 +378,7 @@
 	pm-ignore-notify;
 	keep-power-in-suspend;
 	non-removable;
-	status = "okay";
+	status = "disabled";
 };
 
 &usdhc2 { 				// sd card
@@ -533,19 +548,20 @@
 		compatible = "fsl,sgtl5000";
 		#sound-dai-cells = <0>;
 		reg = <0x0a>;
-		//VDDA-supply = <&reg_vref_3v3>;
-		//VDDIO-supply = <&reg_vref_3v3>;
-		//VDDD-supply = <&reg_vref_1v8>;
+		VDDA-supply = <&reg_vref_3v3>;
+		VDDIO-supply = <&reg_vref_3v3>;
+		VDDD-supply = <&reg_vref_1v8>;
 		clocks = <&sai1>;
 		status = "okay";
 	};
 
 	mipidsi_to_hdmi: lt8912@48 {
 		compatible = "lontium,lt8912";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_gpio_hpd &pinctrl_gpio_reset>;
 		reg = <0x48>;
 		hpd-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
-		// GPIO1_IO07 -> IRQ_HDMI , hangi durumda irq gelmesi gerekiyor? In default, this pin is configured as interrupt request (IRQ) output.
 		clocks = <&clk IMX8MM_CLK_CLKO1>;
 		clock-names = "hdmi_clk";
 		assigned-clocks = <&clk IMX8MM_CLK_CLKO1>;
@@ -553,8 +569,8 @@
 		assigned-clock-rates = <25000000>;
 
 		port {
-			lt8912_1_in: endpoint {
-				remote-endpoint = <&mipi_dsi_bridge1_out>;
+			lt8912_from_dsim: endpoint {
+				remote-endpoint = <&dsim_to_lt8912>;
 			};
 		};
 
@@ -613,7 +629,7 @@
 	pinctrl-0 = <&pinctrl_i2c3>;
 	scl-gpios = <&gpio5 18 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpio5 19 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+	status = "disabled";
 
 	ov5645_mipi: ov5645_mipi@3c {
 		compatible = "ovti,ov5645_mipi";
@@ -640,10 +656,24 @@
 &iomuxc {
 	pinctrl-names = "default";
 
-	// MX8MM_IOMUXC_SD1_DATA5_GPIO2_IO7
-	// MX8MM_IOMUXC_SD1_DATA6_GPIO2_IO8
-	// MX8MM_IOMUXC_SD1_DATA7_GPIO2_IO9
+	// duzenle
+	// MX8MM_IOMUXC_SD1_DATA5_GPIO2_IO7 BT_WAKE_DEV
+	// MX8MM_IOMUXC_SD1_DATA6_GPIO2_IO8 BT_WAKE_HOST
+	// MX8MM_IOMUXC_SD1_DATA7_GPIO2_IO9 WL_WAKE_HOST
 	
+	pinctrl_gpio_hpd: gpio-hpd {
+		fsl,pins = <
+			MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x20
+		>;
+	};
+
+	pinctrl_gpio_reset: gpio-rst {
+		fsl,pins = <
+			MX8MM_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x20
+		>;
+	};
+
+
 	pinctrl_csi1: csi_grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SAI1_RXD3_GPIO4_IO5		0x19 // camera pwdn
@@ -761,18 +791,6 @@
 			MX8MM_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0	0x17088
 			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		   // MIC_EN 6ul dts içindeki inveventhandler içine tanımlanacak.
 			// MX8MM_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7 	   // AMP_EN
-		>;
-	};
-
-	pinctrl_sai1_dsd: sai1grp {
-		fsl,pins = <
-			MX8MM_IOMUXC_SAI1_MCLK_SAI1_MCLK	0x4001b031
-			MX8MM_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC	0x17088
-			MX8MM_IOMUXC_SAI1_TXC_SAI1_TX_BCLK	0x17088
-			MX8MM_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0	0x17088
-			MX8MM_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0	0x17088
-			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		   // MIC_EN
-			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6 	   // AMP_EN
 		>;
 	};
 
@@ -1005,7 +1023,7 @@
 &mipi_csi_1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
+	status = "disabled";
 	port {
 		mipi1_sensor_ep: endpoint@1 {
 			remote-endpoint = <&ov5645_mipi1_ep>;
@@ -1025,24 +1043,25 @@
 	status = "okay";
 
 	port@1 {
-		mipi_dsi_bridge1_out: endpoint {
-			remote-endpoint = <&lt8912_1_in>;
+		dsim_to_lt8912: endpoint {
+		remote-endpoint = <&lt8912_from_dsim>;
+		attach-bridge;
 		};
 	};
 };
 
 &vpu_g1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &vpu_g2 {
-	status = "okay";
+	status = "disabled";
 };
 
 &vpu_h1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &gpu {
-	status = "okay";
+	status = "disabled";
 };

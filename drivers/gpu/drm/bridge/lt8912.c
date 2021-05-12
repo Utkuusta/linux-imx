@@ -477,7 +477,6 @@ static int lt8912_i2c_init(struct lt8912 *lt,
 
 		lt->regmap[i] = regmap;
 	}
-
 	return 0;
 }
 
@@ -555,6 +554,7 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 
 	lt->dev = dev;
 
+	dev_err(dev, "LT8912 probing device...\n");
 	/* get optional regular DDC I2C bus */
 	ddc_phandle = of_parse_phandle(dev->of_node, "ddc-i2c-bus", 0);
 	if (ddc_phandle) {
@@ -597,7 +597,8 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 		dev_err(dev, "failed to request reset GPIO: %d\n", ret);
 		return ret;
 	}
-
+	
+	dev_err(dev, "LT8912 initilization i2c...\n");
 	ret = lt8912_i2c_init(lt, i2c);
 	if (ret)
 		return ret;
@@ -616,6 +617,8 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 		of_node_put(endpoint);
 		return -ENODEV;
 	}
+
+	dev_err(dev, "LT8912 device probed.\n");
 
 	of_node_put(endpoint);
 	of_node_put(lt->host_node);
