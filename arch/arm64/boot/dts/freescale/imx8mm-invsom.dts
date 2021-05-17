@@ -205,8 +205,9 @@
 };
 
 &fec1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_fec1 &pinctrl_fec1_reset>;
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&pinctrl_fec1>;
+	pinctrl-1 = <&pinctrl_fec1_sleep>;
 	phy-mode = "rgmii-id";
 	phy-handle = <&ethphy0>;
 	phy-reset-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
@@ -219,9 +220,10 @@
 
 		ethphy0: ethernet-phy@3 {
 			compatible = "ethernet-phy-ieee802.3-c22";
+			interrupt-parent = <&gpio1>;
+			interrupts = <10 IRQ_TYPE_LEVEL_LOW>;
+			micrel,led-mode = <0>;
 			reg = <3>;
-			at803x,eee-disabled;
-			at803x,vddio-1p8v;
 		};
 	};
 };
@@ -697,12 +699,28 @@
 			MX8MM_IOMUXC_ENET_RXC_ENET1_RGMII_RXC		0x91
 			MX8MM_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL	0x91
 			MX8MM_IOMUXC_ENET_TX_CTL_ENET1_RGMII_TX_CTL	0x1f
-			MX8MM_IOMUXC_GPIO1_IO10_GPIO1_IO10 		0x1f // ethernet interrupt
+			MX8MM_IOMUXC_GPIO1_IO10_GPIO1_IO10 		0x1c4 // ethernet interrupt
+			MX8MM_IOMUXC_GPIO1_IO11_GPIO1_IO11         	0x19 // ENET_nRST
 		>;
 	};
-
-	pinctrl_fec1_reset: fec1_resetgrp {
+	
+	pinctrl_fec1_sleep: fec1-sleepgrp {
 		fsl,pins = <
+			MX8MM_IOMUXC_ENET_MDC_ENET1_MDC			0x3
+			MX8MM_IOMUXC_ENET_MDIO_ENET1_MDIO		0x3
+			MX8MM_IOMUXC_ENET_TD3_GPIO1_IO18		0x1f
+			MX8MM_IOMUXC_ENET_TD2_GPIO1_IO19		0x1f
+			MX8MM_IOMUXC_ENET_TD1_GPIO1_IO20		0x1f
+			MX8MM_IOMUXC_ENET_TD0_GPIO1_IO21		0x1f
+			MX8MM_IOMUXC_ENET_RD3_ENET1_RGMII_RD3		0x91
+			MX8MM_IOMUXC_ENET_RD2_ENET1_RGMII_RD2		0x91
+			MX8MM_IOMUXC_ENET_RD1_ENET1_RGMII_RD1		0x91
+			MX8MM_IOMUXC_ENET_RD0_ENET1_RGMII_RD0		0x91
+			MX8MM_IOMUXC_ENET_TXC_GPIO1_IO23		0x1f
+			MX8MM_IOMUXC_ENET_RXC_ENET1_RGMII_RXC		0x91
+			MX8MM_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL	0x91
+			MX8MM_IOMUXC_ENET_TX_CTL_GPIO1_IO22		0x1f
+			MX8MM_IOMUXC_GPIO1_IO10_GPIO1_IO10		0x184
 			MX8MM_IOMUXC_GPIO1_IO11_GPIO1_IO11         	0x19 // ENET_nRST
 		>;
 	};
