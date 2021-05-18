@@ -174,7 +174,8 @@
 	};
 	
 	usdhc1_pwrseq: usdhc1_pwrseq {
-		compatible = "mmc-pwrseq-simple";
+		//compatible = "mmc-pwrseq-simple";
+		compatible = "mmc-pwrseq-emmc";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_usdhc1_gpio>;
 		reset-gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
@@ -384,13 +385,14 @@
 	pinctrl-2 = <&pinctrl_usdhc1_200mhz>, <&pinctrl_wlan>;
 	bus-width = <4>;
 	//vmmc-supply = <&reg_sd1_vmmc>;
+	no-1-8-v;
 	pm-ignore-notify;
 	keep-power-in-suspend;
 	non-removable;
-	cap-power-off-card;
+	//cap-power-off-card;
 	/delete-property/ vmmc-supply;
 	mmc-pwrseq = <&usdhc1_pwrseq>;
-
+	wifi-host;
 	brcmf: bcrmf@1 {
 		reg = <1>;
 		compatible = "brcm,bcm4329-fmac";
