@@ -174,8 +174,8 @@
 	};
 	
 	usdhc1_pwrseq: usdhc1_pwrseq {
-		//compatible = "mmc-pwrseq-simple";
-		compatible = "mmc-pwrseq-emmc";
+		compatible = "mmc-pwrseq-simple";
+		//compatible = "mmc-pwrseq-emmc";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_usdhc1_gpio>;
 		reset-gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
