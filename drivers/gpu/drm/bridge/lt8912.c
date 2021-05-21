@@ -580,6 +580,10 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 		if (ret != -EPROBE_DEFER)
 			dev_err(dev, "failed to get hpd gpio: %d\n", ret);
 		goto put_i2c_ddc;
+	} else {
+		ret = gpiod_get_value(lt->hpd_gpio);
+		dev_err(dev, "LT8912 hpd_gpio: %d\n", ret);
+		ret = 0;
 	}
 
 	lt->irq = gpiod_to_irq(lt->hpd_gpio);
@@ -616,8 +620,8 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	
 	dev_err(dev, "LT8912 initilization i2c...\n");
 	ret = lt8912_i2c_init(lt, i2c);
-	if (ret)
-		goto put_i2c_ddc;
+	//if (ret)
+	//	goto put_i2c_ddc;
 
 	/* TODO: interrupt handing */
 
