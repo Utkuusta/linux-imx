@@ -566,13 +566,17 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	if (ddc_phandle) {
 		lt->ddc = of_get_i2c_adapter_by_node(ddc_phandle);
 		of_node_put(ddc_phandle);
-		if (!(lt->ddc))
-			return -EPROBE_DEFER;
+		dev_err(dev, "LT8912 ddc_phandle\n");
+		if (!(lt->ddc)) {
+			dev_err(dev, "LT8912 if ddc_phandle\n");
+			return -EPROBE_DEFER;		
+		}
 	}
 
 	lt->hpd_gpio = devm_gpiod_get(dev, "hpd", GPIOD_IN);
 	if (IS_ERR(lt->hpd_gpio)) {
 		ret = PTR_ERR(lt->hpd_gpio);
+		dev_err(dev, "LT8912 hpd_gpio\n");
 		if (ret != -EPROBE_DEFER)
 			dev_err(dev, "failed to get hpd gpio: %d\n", ret);
 		goto put_i2c_ddc;

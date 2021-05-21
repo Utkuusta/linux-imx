@@ -648,16 +648,17 @@
 
 &i2c3 {
 	clock-frequency = <100000>;
-	pinctrl-names = "default";
+	pinctrl-names = "default", "gpio";
 	pinctrl-0 = <&pinctrl_i2c3>;
-	scl-gpios = <&gpio5 18 GPIO_ACTIVE_HIGH>;
-	sda-gpios = <&gpio5 19 GPIO_ACTIVE_HIGH>;
-	status = "disabled";
+	pinctrl-1 = <&pinctrl_i2c3_gpio>;
+	scl-gpios = <&gpio5 18 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	sda-gpios = <&gpio5 19 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	status = "okay";
 
 	ov5645_mipi: ov5645_mipi@3c {
 		compatible = "ovti,ov5645_mipi";
 		reg = <0x3c>;
-		status = "okay";
+		status = "disabled";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_csi1>;
 		clocks = <&clk IMX8MM_CLK_DUMMY>;
@@ -781,6 +782,13 @@
 		fsl,pins = <
 			MX8MM_IOMUXC_I2C3_SCL_I2C3_SCL			0x400001c3
 			MX8MM_IOMUXC_I2C3_SDA_I2C3_SDA			0x400001c3
+		>;
+	};
+
+	pinctrl_i2c3_gpio: i2c3gpiogrp {
+		fsl,pins = <
+			MX8MM_IOMUXC_I2C3_SCL_GPIO5_IO18		0x400001c6	/* SODIMM 95 */
+			MX8MM_IOMUXC_I2C3_SDA_GPIO5_IO19		0x400001c6	/* SODIMM 93 */
 		>;
 	};
 
