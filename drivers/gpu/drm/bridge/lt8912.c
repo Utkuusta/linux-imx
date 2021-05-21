@@ -317,7 +317,7 @@ static int lt8912_connector_get_modes(struct drm_connector *connector)
 	} else { /* if not EDID, use dtb timings */
 		timings = of_get_display_timings(lt->dev->of_node);
 
-		if (timings->num_timings == 0) {
+		if (!timings || timings->num_timings == 0) {
 			dev_err(lt->dev, "failed to get display timings from dtb\n");
 			return 0;
 		}
@@ -388,12 +388,14 @@ static void lt8912_bridge_post_disable(struct drm_bridge *bridge)
 static void lt8912_bridge_enable(struct drm_bridge *bridge)
 {
 	struct lt8912 *lt = bridge_to_lt8912(bridge);
+	dev_err(lt->dev, "lt8912_bridge_enable\n");
 	lt8912_init(lt);
 }
 
 static void lt8912_bridge_pre_enable(struct drm_bridge *bridge)
 {
 	struct lt8912 *lt = bridge_to_lt8912(bridge);
+	dev_err(lt->dev, "lt8912_bridge_pre_enable\n");
 	lt8912_wakeup(lt);
 }
 
@@ -402,7 +404,7 @@ static void lt8912_bridge_mode_set(struct drm_bridge *bridge,
 				   const struct drm_display_mode *adj)
 {
 	struct lt8912 *lt = bridge_to_lt8912(bridge);
-
+	dev_err(lt->dev, "lt8912_bridge_mode_set\n");
 	drm_mode_copy(&lt->mode, adj);
 }
 
@@ -412,6 +414,7 @@ static int lt8912_bridge_attach(struct drm_bridge *bridge)
 	struct drm_connector *connector = &lt->connector;
 	int ret;
 
+	dev_err(lt->dev, "lt8912_bridge_attach\n");
 	connector->polled = DRM_CONNECTOR_POLL_HPD;
 
 	ret = drm_connector_init(bridge->dev, connector,
@@ -462,6 +465,7 @@ static int lt8912_i2c_init(struct lt8912 *lt,
 		return -ENODEV;
 
 	for (i = 0; i < ARRAY_SIZE(info); i++) {
+		dev_err(&client->dev, "LT8912 regmap init %s\n", info[i].type);
 		if (i > 0 ) {
 			client = i2c_new_dummy(client->adapter, info[i].addr);
 			if (!client)
@@ -476,11 +480,13 @@ static int lt8912_i2c_init(struct lt8912 *lt,
 		}
 
 		lt->regmap[i] = regmap;
+		dev_err(&client->dev, "LT8912 regmap set ok for %s\n", info[i].type);
 	}
+
 	return 0;
 }
 
-int lt8912_attach_dsi(struct lt8912 *lt)
+static int lt8912_attach_dsi(struct lt8912 *lt)
 {
 	struct device *dev = lt->dev;
 	struct mipi_dsi_host *host;
@@ -539,7 +545,7 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	struct device_node *ddc_phandle;
 	struct device_node *endpoint;
 	unsigned int irq_flags;
-	int ret;
+	int ret = 0;
 
 	static int initialize_it = 1;
 
@@ -559,25 +565,29 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	ddc_phandle = of_parse_phandle(dev->of_node, "ddc-i2c-bus", 0);
 	if (ddc_phandle) {
 		lt->ddc = of_get_i2c_adapter_by_node(ddc_phandle);
-		if (!(lt->ddc))
-			ret = -EPROBE_DEFER;
 		of_node_put(ddc_phandle);
+		if (!(lt->ddc))
+			return -EPROBE_DEFER;
 	}
 
 	lt->hpd_gpio = devm_gpiod_get(dev, "hpd", GPIOD_IN);
 	if (IS_ERR(lt->hpd_gpio)) {
-		dev_err(dev, "failed to get hpd gpio\n");
-		return ret;
+		ret = PTR_ERR(lt->hpd_gpio);
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "failed to get hpd gpio: %d\n", ret);
+		goto put_i2c_ddc;
 	}
 
 	lt->irq = gpiod_to_irq(lt->hpd_gpio);
 	if (lt->irq == -ENXIO) {
 		dev_err(dev, "failed to get hpd irq\n");
-		return -ENODEV;
+		ret = -ENODEV;
+		goto put_i2c_ddc;
 	}
 	if (lt->irq < 0) {
 		dev_err(dev, "failed to get hpd irq, %i\n", lt->irq);
-		return lt->irq;
+		ret = lt->irq;
+		goto put_i2c_ddc;
 	}
 	irq_flags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING | IRQF_ONESHOT;
 	ret = devm_request_threaded_irq(dev, lt->irq,
@@ -585,8 +595,9 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 					lt8912_hpd_irq_thread,
 					irq_flags, "lt8912_hpd", lt);
 	if (ret) {
-		dev_err(dev, "failed to request irq\n");
-		return -ENODEV;
+		dev_err(dev, "failed to request irq: %d\n", ret);
+		ret = -ENODEV;
+		goto put_i2c_ddc;
 	}
 
 	disable_irq(lt->irq);
@@ -594,14 +605,15 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	lt->reset_n = devm_gpiod_get_optional(dev, "reset", GPIOD_ASIS);
 	if (IS_ERR(lt->reset_n)) {
 		ret = PTR_ERR(lt->reset_n);
-		dev_err(dev, "failed to request reset GPIO: %d\n", ret);
-		return ret;
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "failed to request reset GPIO: %d\n", ret);
+		goto put_i2c_ddc;
 	}
 	
 	dev_err(dev, "LT8912 initilization i2c...\n");
 	ret = lt8912_i2c_init(lt, i2c);
 	if (ret)
-		return ret;
+		goto put_i2c_ddc;
 
 	/* TODO: interrupt handing */
 
@@ -609,25 +621,28 @@ static int lt8912_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	lt->channel_id = 1;
 
 	endpoint = of_graph_get_next_endpoint(dev->of_node, NULL);
-	if (!endpoint)
-		return -ENODEV;
-
-	lt->host_node = of_graph_get_remote_port_parent(endpoint);
-	if (!lt->host_node) {
-		of_node_put(endpoint);
-		return -ENODEV;
+	if (!endpoint) {
+		ret = -ENODEV;
+		goto put_i2c_ddc;
 	}
 
-	dev_err(dev, "LT8912 device probed.\n");
-
+	lt->host_node = of_graph_get_remote_port_parent(endpoint);
 	of_node_put(endpoint);
-	of_node_put(lt->host_node);
+	if (!lt->host_node) {
+		ret = -ENODEV;
+		goto put_i2c_ddc;
+	}
 
 	lt->bridge.funcs = &lt8912_bridge_funcs;
 	lt->bridge.of_node = dev->of_node;
 	drm_bridge_add(&lt->bridge);
 
+	dev_err(dev, "LT8912 device probed.\n");
 	return 0;
+
+put_i2c_ddc:
+	i2c_put_adapter(lt->ddc);
+	return ret;
 }
 
 static int lt8912_remove(struct i2c_client *i2c)
@@ -637,6 +652,7 @@ static int lt8912_remove(struct i2c_client *i2c)
 	lt8912_sleep(lt);
 	mipi_dsi_detach(lt->dsi);
 	drm_bridge_remove(&lt->bridge);
+	of_node_put(lt->host_node);
 
 	return 0;
 }
@@ -645,6 +661,7 @@ static const struct i2c_device_id lt8912_i2c_ids[] = {
 	{ "lt8912", 0 },
 	{ }
 };
+MODULE_DEVICE_TABLE(i2c, lt8912_i2c_ids);
 
 static const struct of_device_id lt8912_of_match[] = {
 	{ .compatible = "lontium,lt8912" },

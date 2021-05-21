@@ -2,6 +2,10 @@
 
 imxdrm-objs := imx-drm-core.o
 
+CFLAGS_imx-drm-core.o += -DDEBUG
+CFLAGS_sec_mipi_dsim-imx.o += -DDEBUG
+CFLAGS_imxdrm.o += -DDEBUG
+
 obj-$(CONFIG_DRM_IMX) += imxdrm.o
 
 obj-$(CONFIG_DRM_IMX_LCDIF_MUX_DISPLAY) += lcdif-mux-display.o
