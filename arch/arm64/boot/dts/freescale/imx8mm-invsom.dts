@@ -687,7 +687,7 @@
 	
 	pinctrl_gpio_hpd: gpio-hpd {
 		fsl,pins = <
-			MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0xc4
+			MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x184
 		>;
 	};
 
