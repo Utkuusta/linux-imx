@@ -637,6 +637,7 @@
 	adc: tla2022@49 {
 		compatible = "ti,tla2022";
 		reg = <0x49>;
+		status = "disabled";
 	};
 
 	rtc: pcf85063@51 {
