@@ -158,22 +158,22 @@
 		status = "okay";
 	};*/
 
-    sound {
-        compatible = "simple-audio-card";
-        simple-audio-card,name = "imx8mm-sgtl5000";
-        simple-audio-card,format = "i2s";
-        simple-audio-card,bitclock-master = <&dailink_master>;
-        simple-audio-card,frame-master = <&dailink_master>;
-        /*simple-audio-card,mclk-fs = <1>;*/
-        simple-audio-card,cpu {
-                sound-dai = <&sai1>;
-        };
+    	sound {
+        	compatible = "simple-audio-card";
+        	simple-audio-card,name = "imx8mm-sgtl5000";
+        	simple-audio-card,format = "i2s";
+        	simple-audio-card,bitclock-master = <&dailink_master>;
+        	simple-audio-card,frame-master = <&dailink_master>;
+        	/*simple-audio-card,mclk-fs = <1>;*/
+        	simple-audio-card,cpu {
+                	sound-dai = <&sai1>;
+        	};
 
-        dailink_master: simple-audio-card,codec {
-            sound-dai = <&sgtl5000>;
-            clocks = <&clk IMX8MM_CLK_SAI1>;
-        };   
-    };
+        	dailink_master: simple-audio-card,codec {
+            	sound-dai = <&sgtl5000>;
+            	clocks = <&clk IMX8MM_CLK_SAI1>;
+        	};   
+    	};
 
 	sound-hdmi {
 		compatible = "fsl,imx-audio-hdmi";
@@ -586,10 +586,13 @@
 
 	sgtl5000: codec@0a {
 		compatible = "fsl,sgtl5000";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_amp_en>;
+		amp-en-gpio = <&gpio4 19 GPIO_ACTIVE_HIGH>;
 		#sound-dai-cells = <0>;
 		reg = <0x0a>;
-        clocks = <&clk IMX8MM_CLK_SAI1>;
-        clock-names = "mclk";
+        	clocks = <&clk IMX8MM_CLK_SAI1>;
+        	clock-names = "mclk";
 		assigned-clock-rates = <24576000>, <24576000>; 
 		VDDA-supply = <&reg_vref_3v3>;
 		VDDIO-supply = <&reg_vref_3v3>;
@@ -853,13 +856,18 @@
 
 	pinctrl_sai1: sai1grp {
 		fsl,pins = <
-			MX8MM_IOMUXC_SAI1_MCLK_SAI1_MCLK	0xd6
+			MX8MM_IOMUXC_SAI1_MCLK_SAI1_MCLK	0xc4
 			MX8MM_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC	0xd6
 			MX8MM_IOMUXC_SAI1_TXC_SAI1_TX_BCLK	0xd6
 			MX8MM_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0	0xd6
 			MX8MM_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0	0xd6
 			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		   // MIC_EN 6ul dts içindeki inveventhandler içine tanımlanacak.
-			// MX8MM_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7 	   // AMP_EN
+		>;
+	};
+
+	pinctrl_amp_en: amp_engrp {
+		fsl,pins = <
+			MX8MM_IOMUXC_SAI1_TXD7_GPIO4_IO19     0x19 // AMP_EN
 		>;
 	};
 

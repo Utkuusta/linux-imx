@@ -26,6 +26,7 @@
 #include <sound/soc-dapm.h>
 #include <sound/initval.h>
 
+#include <linux/gpio/consumer.h>
 #include "sgtl5000.h"
 
 //ERHANY
@@ -161,6 +162,8 @@ struct sgtl5000_priv {
 	u8 lrclk_strength;
 	u8 sclk_strength;
 	u16 mute_state[LAST_POWER_EVENT + 1];
+
+	struct gpio_desc *amp_en_pin;
 };
 
 static inline int hp_sel_input(struct snd_soc_component *component)
@@ -1712,6 +1715,20 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		dev_err(&client->dev,
 			"Error %d muting outputs via CHIP_ANA_CTRL\n", ret);
 		goto disable_clk;
+	}
+
+	dev_err(&client->dev, "before sgtl5000->amp_en_pin\n");
+	sgtl5000->amp_en_pin = devm_gpiod_get(&client->dev, "amp-en", GPIOD_OUT_HIGH);
+	if (IS_ERR(sgtl5000->amp_en_pin)) {
+		ret = PTR_ERR(sgtl5000->amp_en_pin);
+		dev_err(&client->dev, "failed to request GPIO amp-en: %d\n", ret);
+	} else {
+		ret = gpiod_export(sgtl5000->amp_en_pin, 0);//no direction setting
+		if( ret == 0 )
+			gpiod_export_link(&client->dev, "amp-en", sgtl5000->amp_en_pin);
+
+		dev_err(&client->dev, "amp_en_pin setting HIGH..\n");
+		gpiod_direction_output(sgtl5000->amp_en_pin, 1);
 	}
 
 	/*
