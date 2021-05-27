@@ -142,7 +142,7 @@
 		};
 	};
 
-	sound-sgtl5000 {
+	/*sound-sgtl5000 {
 		compatible = "fsl,imx-audio-sgtl5000";
 		model = "imx8mm-sgtl5000";
 		ssi-controller = <&sai1>;
@@ -156,7 +156,24 @@
 			"Headphone Jack", "HP_OUT",
 			"Ext Spk", "LINE_OUT";
 		status = "okay";
-	};
+	};*/
+
+    sound {
+        compatible = "simple-audio-card";
+        simple-audio-card,name = "imx8mm-sgtl5000";
+        simple-audio-card,format = "i2s";
+        simple-audio-card,bitclock-master = <&dailink_master>;
+        simple-audio-card,frame-master = <&dailink_master>;
+        /*simple-audio-card,mclk-fs = <1>;*/
+        simple-audio-card,cpu {
+                sound-dai = <&sai1>;
+        };
+
+        dailink_master: simple-audio-card,codec {
+            sound-dai = <&sgtl5000>;
+            clocks = <&clk IMX8MM_CLK_SAI1>;
+        };   
+    };
 
 	sound-hdmi {
 		compatible = "fsl,imx-audio-hdmi";
@@ -307,20 +324,21 @@
 };
 
 &sai1 {
+	#sound-dai-cells = <0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai1>;
 	assigned-clocks = <&clk IMX8MM_CLK_SAI1>;
 	assigned-clock-parents = <&clk IMX8MM_AUDIO_PLL1_OUT>;
-	assigned-clock-rates = <0>, <11851852>;
-	clocks = <&clk IMX8MM_CLK_SAI1_IPG>, <&clk IMX8MM_CLK_DUMMY>,
-		<&clk IMX8MM_CLK_SAI1_ROOT>, <&clk IMX8MM_CLK_DUMMY>,
-		<&clk IMX8MM_CLK_DUMMY>, <&clk IMX8MM_AUDIO_PLL1_OUT>,
-		<&clk IMX8MM_AUDIO_PLL2_OUT>;
-	clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3", "pll8k", "pll11k";
-	fsl,sai-mclk-direction-output;
-	fsl,sai-multi-lane;
-	fsl,dataline,dsd = <0 0xff 0xff 2 0xff 0x11>;
-	dmas = <&sdma2 0 25 0>, <&sdma2 1 25 0>;
+	assigned-clock-rates = <24576000>;
+	//clocks = <&clk IMX8MM_CLK_SAI1_IPG>, <&clk IMX8MM_CLK_DUMMY>,
+	//	<&clk IMX8MM_CLK_SAI1_ROOT>, <&clk IMX8MM_CLK_DUMMY>,
+	//	<&clk IMX8MM_CLK_DUMMY>, <&clk IMX8MM_AUDIO_PLL1_OUT>,
+	//	<&clk IMX8MM_AUDIO_PLL2_OUT>;
+	//clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3", "pll8k", "pll11k";
+	//fsl,sai-mclk-direction-output;
+	//fsl,sai-multi-lane;
+	//fsl,dataline,dsd = <0 0xff 0xff 2 0xff 0x11>;
+	//dmas = <&sdma2 0 25 0>, <&sdma2 1 25 0>;
 	status = "okay";
 };
 
@@ -570,10 +588,12 @@
 		compatible = "fsl,sgtl5000";
 		#sound-dai-cells = <0>;
 		reg = <0x0a>;
+        clocks = <&clk IMX8MM_CLK_SAI1>;
+        clock-names = "mclk";
+		assigned-clock-rates = <24576000>, <24576000>; 
 		VDDA-supply = <&reg_vref_3v3>;
 		VDDIO-supply = <&reg_vref_3v3>;
 		VDDD-supply = <&reg_vref_1v8>;
-		clocks = <&sai1>;
 		status = "okay";
 	};
 
@@ -590,7 +610,7 @@
 		assigned-clocks = <&clk IMX8MM_CLK_CLKO1>;
 		assigned-clock-parents = <&clk IMX8MM_SYS_PLL1_200M>;
 		assigned-clock-rates = <25000000>;
-
+		status = "disabled";
 		port {
 			lt8912_from_dsim: endpoint {
 				remote-endpoint = <&dsim_to_lt8912>;
@@ -644,6 +664,7 @@
 		compatible = "nxp,pcf85063a";
 		reg = <0x51>;
 		quartz-load-femtofarads = <7000>;
+		status = "disabled";
 	};
 };
 
@@ -832,11 +853,11 @@
 
 	pinctrl_sai1: sai1grp {
 		fsl,pins = <
-			MX8MM_IOMUXC_SAI1_MCLK_SAI1_MCLK	0x4001b031
-			MX8MM_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC	0x17088
-			MX8MM_IOMUXC_SAI1_TXC_SAI1_TX_BCLK	0x17088
-			MX8MM_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0	0x17088
-			MX8MM_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0	0x17088
+			MX8MM_IOMUXC_SAI1_MCLK_SAI1_MCLK	0xd6
+			MX8MM_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC	0xd6
+			MX8MM_IOMUXC_SAI1_TXC_SAI1_TX_BCLK	0xd6
+			MX8MM_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0	0xd6
+			MX8MM_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0	0xd6
 			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		   // MIC_EN 6ul dts içindeki inveventhandler içine tanımlanacak.
 			// MX8MM_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7 	   // AMP_EN
 		>;

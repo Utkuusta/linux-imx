@@ -1606,9 +1606,9 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	}
 
 //ERHANY
-	{
+	/*{
 		struct regmap *gpr;
-			gpr = syscon_regmap_lookup_by_compatible("fsl,imx6ul-iomuxc-gpr");
+			gpr = syscon_regmap_lookup_by_compatible("fsl,imx8mm-iomuxc-gpr");
 			if (IS_ERR(gpr)) {
 				dev_err(&client->dev, "cannot find iomuxc registers\n");
 				return PTR_ERR(gpr);
@@ -1617,7 +1617,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 			regmap_update_bits(gpr, IOMUXC_GPR1, MCLK_DIR(2),
 					   MCLK_DIR(2));
 			dev_err(&client->dev, "mclk2 direction set\n");
-	}
+	}*/
 
 	/*{
 		struct clk *busclk = devm_clk_get(&client->dev, "bus0");
@@ -1653,7 +1653,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 			}
 		}
 	}*/
-
+	dev_err(&client->dev, "before sgtl5000->mclk\n");
 	sgtl5000->mclk = devm_clk_get(&client->dev, NULL);
 	if (IS_ERR(sgtl5000->mclk)) {
 		ret = PTR_ERR(sgtl5000->mclk);
@@ -1666,7 +1666,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 				ret);
 		goto disable_regs;
 	}
-
+	dev_err(&client->dev, "before clk_prepare_enable\n");
 	ret = clk_prepare_enable(sgtl5000->mclk);
 	if (ret) {
 		dev_err(&client->dev, "Error enabling clock %d\n", ret);
@@ -1677,14 +1677,14 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 
 	/* Need 8 clocks before I2C accesses */
 	udelay(10);
-
+	dev_err(&client->dev, "before regmap_read-sgtl5000\n");
 	/* read chip information */
 	ret = regmap_read(sgtl5000->regmap, SGTL5000_CHIP_ID, &reg);
 	if (ret) {
 		dev_err(&client->dev, "Error reading chip id %d\n", ret);
 		goto disable_clk;
 	}
-
+	dev_err(&client->dev, "before GTL5000_PARTID_MASK\n");
 	if (((reg & SGTL5000_PARTID_MASK) >> SGTL5000_PARTID_SHIFT) !=
 	    SGTL5000_PARTID_PART_ID) {
 		dev_err(&client->dev,
@@ -1696,7 +1696,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	rev = (reg & SGTL5000_REVID_MASK) >> SGTL5000_REVID_SHIFT;
 	dev_info(&client->dev, "sgtl5000 revision 0x%x\n", rev);
 	sgtl5000->revision = rev;
-
+	dev_err(&client->dev, "before SGTL5000_CHIP_CLK_CTRL\n");
 	/* reconfigure the clocks in case we're using the PLL */
 	ret = regmap_write(sgtl5000->regmap,
 			   SGTL5000_CHIP_CLK_CTRL,
@@ -1704,7 +1704,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	if (ret)
 		dev_err(&client->dev,
 			"Error %d initializing CHIP_CLK_CTRL\n", ret);
-
+	dev_err(&client->dev, "before SGTL5000_CHIP_ANA_CTRL\n");
 	/* Mute everything to avoid pop from the following power-up */
 	ret = regmap_write(sgtl5000->regmap, SGTL5000_CHIP_ANA_CTRL,
 			   SGTL5000_CHIP_ANA_CTRL_DEFAULT);
@@ -1833,14 +1833,14 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		goto disable_clk;
 
 	return 0;
-
+	dev_err(&client->dev, "before disable_clk\n");
 disable_clk:
 	clk_disable_unprepare(sgtl5000->mclk);
-
+	dev_err(&client->dev, "before disable_regs\n");
 disable_regs:
 	regulator_bulk_disable(sgtl5000->num_supplies, sgtl5000->supplies);
 	regulator_bulk_free(sgtl5000->num_supplies, sgtl5000->supplies);
-
+	dev_err(&client->dev, "before return ret\n");
 	return ret;
 }
 
