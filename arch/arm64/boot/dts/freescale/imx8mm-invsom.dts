@@ -142,7 +142,7 @@
 		};
 	};
 
-	/*sound-sgtl5000 {
+	/*sound {
 		compatible = "fsl,imx-audio-sgtl5000";
 		model = "imx8mm-sgtl5000";
 		ssi-controller = <&sai1>;
@@ -164,7 +164,17 @@
         	simple-audio-card,format = "i2s";
         	simple-audio-card,bitclock-master = <&dailink_master>;
         	simple-audio-card,frame-master = <&dailink_master>;
-        	/*simple-audio-card,mclk-fs = <1>;*/
+        	//simple-audio-card,mclk-fs = <1>;
+
+		simple-audio-card,widgets =
+			"Microphone", "Microphone Jack",
+			"Headphone", "Headphone Jack",
+			"Speaker", "External Speaker";
+		simple-audio-card,routing =
+			"MIC_IN", "Microphone Jack",
+			"Headphone Jack", "HP_OUT",
+			"External Speaker", "LINE_OUT";
+
         	simple-audio-card,cpu {
                 	sound-dai = <&sai1>;
         	};

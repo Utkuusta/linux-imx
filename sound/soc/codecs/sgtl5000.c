@@ -1739,11 +1739,13 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	 * cool-down time.
 	 */
 	ret = regmap_read(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, &value);
+	dev_err(&client->dev, "ana power : %d\n", value);
 	if (ret) {
 		dev_err(&client->dev, "Failed to read ANA_POWER: %d\n", ret);
 		goto disable_clk;
 	}
 	if (value & SGTL5000_VAG_POWERUP) {
+		dev_err(&client->dev, "value & SGTL5000_VAG_POWERUP\n");
 		ret = regmap_update_bits(sgtl5000->regmap,
 					 SGTL5000_CHIP_ANA_POWER,
 					 SGTL5000_VAG_POWERUP,
@@ -1758,6 +1760,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 
 	/* Follow section 2.2.1.1 of AN3663 */
 	ana_pwr = SGTL5000_ANA_POWER_DEFAULT;
+	dev_err(&client->dev, "num_supplies : %d\n", sgtl5000->num_supplies);
 	if (sgtl5000->num_supplies <= VDDD) {
 		/* internal VDDD at 1.2V */
 		ret = regmap_update_bits(sgtl5000->regmap,
@@ -1769,6 +1772,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 				"Error %d setting LINREG_VDDD\n", ret);
 
 		ana_pwr |= SGTL5000_LINEREG_D_POWERUP;
+		dev_err(&client->dev, "ana_pwr - if : %d\n", ana_pwr);
 		dev_info(&client->dev,
 			 "Using internal LDO instead of VDDD: check ER1 erratum\n");
 	} else {
@@ -1778,8 +1782,10 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		 */
 		ana_pwr &= ~(SGTL5000_STARTUP_POWERUP
 			     | SGTL5000_LINREG_SIMPLE_POWERUP);
+		dev_err(&client->dev, "ana_pwr - else : %d\n", ana_pwr);
 		dev_dbg(&client->dev, "Using external VDDD\n");
 	}
+	dev_err(&client->dev, "ana_pwr  : %d\n", ana_pwr);
 	ret = regmap_write(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, ana_pwr);
 	if (ret)
 		dev_err(&client->dev,
