@@ -1609,9 +1609,10 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	}
 
 //ERHANY
-	/*{
+#if CONFIG_SOC_INVSOM6UL
+	{
 		struct regmap *gpr;
-			gpr = syscon_regmap_lookup_by_compatible("fsl,imx8mm-iomuxc-gpr");
+			gpr = syscon_regmap_lookup_by_compatible("fsl,imx6ul-iomuxc-gpr");
 			if (IS_ERR(gpr)) {
 				dev_err(&client->dev, "cannot find iomuxc registers\n");
 				return PTR_ERR(gpr);
@@ -1620,8 +1621,8 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 			regmap_update_bits(gpr, IOMUXC_GPR1, MCLK_DIR(2),
 					   MCLK_DIR(2));
 			dev_err(&client->dev, "mclk2 direction set\n");
-	}*/
-
+	}
+#endif
 	/*{
 		struct clk *busclk = devm_clk_get(&client->dev, "bus0");
 		if (IS_ERR(busclk)) {
