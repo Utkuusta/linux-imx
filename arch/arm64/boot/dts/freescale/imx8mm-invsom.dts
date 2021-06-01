@@ -623,7 +623,7 @@
 		assigned-clocks = <&clk IMX8MM_CLK_CLKO1>;
 		assigned-clock-parents = <&clk IMX8MM_SYS_PLL1_200M>;
 		assigned-clock-rates = <25000000>;
-		status = "disabled";
+		status = "okay";
 		port {
 			lt8912_from_dsim: endpoint {
 				remote-endpoint = <&dsim_to_lt8912>;
@@ -1133,13 +1133,17 @@
 	};
 };
 
+&lcdif {
+	status = "okay";
+};
+
 &mipi_dsi {
 	status = "okay";
 
 	port@1 {
 		dsim_to_lt8912: endpoint {
-		remote-endpoint = <&lt8912_from_dsim>;
-		attach-bridge;
+			remote-endpoint = <&lt8912_from_dsim>;
+			attach-bridge;
 		};
 	};
 };
