@@ -60,12 +60,6 @@
 		clock-frequency = <100000000>;
 	};
 
-	can_clk: clk-mcp251xfd {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <20000000>;
-	};
-
 	/*reg_sd1_vmmc: sd1_regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "WLAN_EN";
@@ -226,14 +220,13 @@
 &ecspi2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
-	status = "disabled";
+	status = "okay";
 
 	mcp251xfd: can@0 {
 		compatible = "microchip,mcp251xfd";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_can>;
+		pinctrl-0 = <&pinctrl_can_irq>;
 		reg = <0>;
-		clocks = <&can_clk>;
 		spi-max-frequency = <10000000>;
 		interrupts-extended = <&gpio1 8 IRQ_TYPE_LEVEL_LOW>;
 	};
@@ -940,7 +933,7 @@
 		>;
 	}; */
 
-	pinctrl_can: cangrp {  // can interrupt
+	pinctrl_can_irq: cangrp {  // can interrupt
 		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8	   0x1f
 		>;
