@@ -209,7 +209,7 @@
 
 &csi1_bridge {
 	fsl,mipi-mode;
-	status = "disabled";
+	status = "okay";
 	port {
 		csi1_ep: endpoint {
 			remote-endpoint = <&csi1_mipi_ep>;
@@ -359,9 +359,11 @@
 	status = "okay";
 };
 
-&uart2 { /* console */
+&uart2 { /* console - RS485 */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart2>;
+	uart-has-rtscts;
+	// linux,rs485-enabled-at-boot-time;
 	status = "okay";
 };
 
@@ -374,13 +376,11 @@
 	status = "okay";
 };
 
-/*&uart4 {
+&uart4 { /* console */
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart4>; // enable pinine bakılacak.
-	rs485-rx-during-tx;
-	linux,rs485-enabled-at-boot-time;
+	pinctrl-0 = <&pinctrl_uart4>;
 	status = "disabled";
-};*/
+};
 
 &usbotg1 {
 	pinctrl-names = "default";
@@ -676,27 +676,19 @@
 
 &i2c3 {
 	clock-frequency = <100000>;
-	pinctrl-names = "default", "gpio";
+	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3>;
-	pinctrl-1 = <&pinctrl_i2c3_gpio>;
-	scl-gpios = <&gpio5 18 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-	sda-gpios = <&gpio5 19 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 	status = "okay";
 
 	ov5645_mipi: ov5645_mipi@3c {
-		compatible = "ovti,ov5645_mipi";
-		reg = <0x3c>;
-		status = "disabled";
+		compatible = "ovti,ov5645";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_csi1>;
-		clocks = <&clk IMX8MM_CLK_DUMMY>;
-		clock-names = "csi_mclk";
-		csi_id = <0>;
-		pwn-gpios = <&gpio4 5 1>;
-		rst-gpios = <&gpio4 3 0>;
-		mclk = <20000000>;
-		mclk_source = <0>;
-		ae_target = <52>;
+		reg = <0x3c>;
+		enable-gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>; //pwdn
+		reset-gpios = <&gpio4 3 GPIO_ACTIVE_LOW>;
+		clock-frequency = <24000000>;
+		status = "okay";		
 		port {
 			ov5645_mipi1_ep: endpoint {
 				remote-endpoint = <&mipi1_sensor_ep>;
@@ -745,7 +737,7 @@
 			MX8MM_IOMUXC_ENET_RD2_ENET1_RGMII_RD2		0x91
 			MX8MM_IOMUXC_ENET_RD1_ENET1_RGMII_RD1		0x91
 			MX8MM_IOMUXC_ENET_RD0_ENET1_RGMII_RD0		0x91
-			MX8MM_IOMUXC_ENET_TXC_ENET1_RGMII_TXC		0x1f
+			MX8MM_IOMUXC_ENET_TXC_ENET1_RGMII_TXC		0x7 // 0x1f
 			MX8MM_IOMUXC_ENET_RXC_ENET1_RGMII_RXC		0x91
 			MX8MM_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL	0x91
 			MX8MM_IOMUXC_ENET_TX_CTL_ENET1_RGMII_TX_CTL	0x1f
@@ -913,6 +905,7 @@
 		fsl,pins = <
 			MX8MM_IOMUXC_UART2_RXD_UART2_DCE_RX	0x140
 			MX8MM_IOMUXC_UART2_TXD_UART2_DCE_TX	0x140
+			MX8MM_IOMUXC_SAI3_RXC_UART2_DCE_CTS_B	0x140
 		>;
 	};
 
@@ -925,13 +918,12 @@
 		>;
 	};
 
-	/* pinctrl_uart4: uart4grp { // rs485
+	pinctrl_uart4: uart4grp {
 		fsl,pins = <
-			MX8MM_IOMUXC_UART4_RXD_UART4_DCE_RX 		0x030b1
-			MX8MM_IOMUXC_UART4_TXD_UART4_DCE_TX 		0x130b1
-			MX8MM_IOMUXC_SAI1_RXD7_GPIO4_IO9 		0x030b1 // rs485 en
+			MX8MM_IOMUXC_UART4_RXD_UART4_DCE_RX	0x140
+			MX8MM_IOMUXC_UART4_TXD_UART4_DCE_TX	0x140
 		>;
-	}; */
+	};
 
 	pinctrl_can_irq: cangrp {  // can interrupt
 		fsl,pins = <
@@ -1110,10 +1102,12 @@
 &mipi_csi_1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "disabled";
+	status = "okay";
 	port {
 		mipi1_sensor_ep: endpoint@1 {
 			remote-endpoint = <&ov5645_mipi1_ep>;
+			//clock-lanes = <0>;
+			//data-lanes = <1 2>;
 			data-lanes = <2>;
 			csis-hs-settle = <13>;
 			csis-clk-settle = <2>;
