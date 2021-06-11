@@ -681,13 +681,16 @@
 	status = "okay";
 
 	ov5645_mipi: ov5645_mipi@3c {
-		compatible = "ovti,ov5645";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_csi1>;
+		compatible = "ovti,ov5645_mipi";
 		reg = <0x3c>;
-		enable-gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>; //pwdn
-		reset-gpios = <&gpio4 3 GPIO_ACTIVE_LOW>;
-		clock-frequency = <24000000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi_pwn>, <&pinctrl_csi_rst>;
+		csi_id = <0>;
+		pwn-gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>;
+		rst-gpios = <&gpio4 3 GPIO_ACTIVE_LOW>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+		ae_target = <52>;
 		status = "okay";		
 		port {
 			ov5645_mipi1_ep: endpoint {
@@ -717,10 +720,14 @@
 		>;
 	};
 
-
-	pinctrl_csi1: csi_grp {
+	pinctrl_csi_pwn: csipwn_grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SAI1_RXD3_GPIO4_IO5		0x19 // camera pwdn
+		>;
+	};
+
+	pinctrl_csi_rst: csirst_grp {
+		fsl,pins = <
 			MX8MM_IOMUXC_SAI1_RXD1_GPIO4_IO3		0x19 // camera rst
 		>;
 	};
@@ -1106,8 +1113,6 @@
 	port {
 		mipi1_sensor_ep: endpoint@1 {
 			remote-endpoint = <&ov5645_mipi1_ep>;
-			//clock-lanes = <0>;
-			//data-lanes = <1 2>;
 			data-lanes = <2>;
 			csis-hs-settle = <13>;
 			csis-clk-settle = <2>;

@@ -3400,7 +3400,6 @@ static struct v4l2_subdev_core_ops ov5645_subdev_core_ops = {
 	.g_register	= ov5645_get_register,
 	.s_register	= ov5645_set_register,
 #endif
-	.queryctrl	= ov5645_queryctrl,
 };
 
 static struct v4l2_subdev_ops ov5645_subdev_ops = {
@@ -3423,7 +3422,7 @@ static void ov5645_adjust_setting_20mhz(void)
 			regsetting->u8Val = 0x17;
 }
 
-static int ov5645_set_regs(const char *buffer, struct kernel_param *kp)
+static int ov5645_set_regs(const char *buffer, const struct kernel_param *kp)
 {
 	// Use this sysfs node to set the ov5645 isp regs by sending it a
 	// comma separated list of register value pairs in hex
@@ -3459,7 +3458,7 @@ static int ov5645_set_regs(const char *buffer, struct kernel_param *kp)
 }
 
 static int reg_addr_to_read;
-static int ov5645_set_print_reg(const char *buffer, struct kernel_param *kp)
+static int ov5645_set_print_reg(const char *buffer, const struct kernel_param *kp)
 {
 	int cnt;
 	cnt = sscanf(buffer, "%x", &reg_addr_to_read);
@@ -3469,7 +3468,7 @@ static int ov5645_set_print_reg(const char *buffer, struct kernel_param *kp)
 	return 0;
 }
 
-static int ov5645_get_print_reg(char *buffer, struct kernel_param *kp)
+static int ov5645_get_print_reg(char *buffer, const struct kernel_param *kp)
 {
 	int cnt, retval;
 	u8 val;
@@ -3483,7 +3482,7 @@ static int ov5645_get_print_reg(char *buffer, struct kernel_param *kp)
 	return cnt;
 }
 
-static int ov5645_set_af_mode(const char *buffer, struct kernel_param *kp)
+static int ov5645_set_af_mode(const char *buffer, const struct kernel_param *kp)
 {
 	int cnt, val;
 	cnt = sscanf(buffer, "%d", &val);
@@ -3505,7 +3504,7 @@ static int ov5645_set_af_mode(const char *buffer, struct kernel_param *kp)
 	return 0;
 }
 
-static int ov5645_read_af(char *buffer, struct kernel_param *kp)
+static int ov5645_read_af(char *buffer, const struct kernel_param *kp)
 {
 	int cnt, retval;
 	u8 val;
@@ -3515,7 +3514,7 @@ static int ov5645_read_af(char *buffer, struct kernel_param *kp)
 	return cnt;
 }
 
-static int ov5645_get_initialized(char *buffer, struct kernel_param *kp)
+static int ov5645_get_initialized(char *buffer, const struct kernel_param *kp)
 {
 	int cnt;
 	cnt = sprintf(buffer, "%d", ov5645_data.initialized ? 1 : 0);
@@ -3576,13 +3575,15 @@ static int ov5645_probe(struct i2c_client *client,
 
 	/* Set initial values for the sensor struct. */
 	memset(&ov5645_data, 0, sizeof(ov5645_data));
+	/* External clk
 	ov5645_data.sensor_clk = devm_clk_get(dev, "csi_mclk");
 	if (IS_ERR(ov5645_data.sensor_clk)) {
-		/* assuming clock enabled by default */
+		// assuming clock enabled by default
 		ov5645_data.sensor_clk = NULL;
 		dev_err(dev, "clock-frequency missing or invalid\n");
 		return PTR_ERR(ov5645_data.sensor_clk);
 	}
+	*/
 
 	retval = of_property_read_u32(dev->of_node, "mclk",
 					&(ov5645_data.mclk));
@@ -3615,7 +3616,7 @@ static int ov5645_probe(struct i2c_client *client,
 			 AE_Target);
 	}
 
-	clk_prepare_enable(ov5645_data.sensor_clk);
+	//clk_prepare_enable(ov5645_data.sensor_clk);
 
 	ov5645_data.io_init = ov5645_reset;
 	ov5645_data.i2c_client = client;
@@ -3637,19 +3638,19 @@ static int ov5645_probe(struct i2c_client *client,
 	retval = ov5645_read_reg(OV5645_CHIP_ID_HIGH_BYTE, &chip_id_high);
 	if (retval < 0 || chip_id_high != 0x56) {
 		pr_warning("camera ov5645_mipi is not found\n");
-		clk_disable_unprepare(ov5645_data.sensor_clk);
+		//clk_disable_unprepare(ov5645_data.sensor_clk);
 		return -ENODEV;
 	}
 	retval = ov5645_read_reg(OV5645_CHIP_ID_LOW_BYTE, &chip_id_low);
 	if (retval < 0 || chip_id_low != 0x45) {
 		pr_warning("camera ov5645_mipi is not found\n");
-		clk_disable_unprepare(ov5645_data.sensor_clk);
+		//clk_disable_unprepare(ov5645_data.sensor_clk);
 		return -ENODEV;
 	}
 
 	retval = init_device();
 	if (retval < 0) {
-		clk_disable_unprepare(ov5645_data.sensor_clk);
+		//clk_disable_unprepare(ov5645_data.sensor_clk);
 		pr_warning("camera ov5645 init failed\n");
 		ov5645_power_down(1);
 		return retval;
@@ -3681,7 +3682,7 @@ static int ov5645_remove(struct i2c_client *client)
 
 	v4l2_async_unregister_subdev(sd);
 
-	clk_disable_unprepare(ov5645_data.sensor_clk);
+	//clk_disable_unprepare(ov5645_data.sensor_clk);
 
 	ov5645_power_down(1);
 
