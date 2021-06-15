@@ -223,12 +223,14 @@
 	status = "okay";
 
 	mcp251xfd: can@0 {
-		compatible = "microchip,mcp251xfd";
+		compatible = "microchip,mcp2518fd";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_can_irq>;
 		reg = <0>;
-		spi-max-frequency = <10000000>;
-		interrupts-extended = <&gpio1 8 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
+		gpio-controller;
+		status = "okay";
 	};
 };
 
