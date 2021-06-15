@@ -671,7 +671,7 @@
 		compatible = "nxp,pcf85063a";
 		reg = <0x51>;
 		quartz-load-femtofarads = <7000>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 

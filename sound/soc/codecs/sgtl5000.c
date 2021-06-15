@@ -1743,7 +1743,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		if( ret == 0 )
 			gpiod_export_link(&client->dev, "mic-en", sgtl5000->mic_en_pin);
 
-		dev_err(&client->dev, "amp_en_pin setting high..\n");
+		dev_err(&client->dev, "mic_en_pin setting high..\n");
 		gpiod_direction_output(sgtl5000->mic_en_pin, 1);
 	}
 
