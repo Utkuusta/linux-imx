@@ -590,8 +590,9 @@
 	sgtl5000: codec@0a {
 		compatible = "fsl,sgtl5000";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_amp_en>;
+		pinctrl-0 = <&pinctrl_amp_en &pinctrl_mic_en>;
 		amp-en-gpio = <&gpio4 19 GPIO_ACTIVE_HIGH>;
+		mic-en-gpio = <&gpio4 18 GPIO_ACTIVE_HIGH>;
 		#sound-dai-cells = <0>;
 		reg = <0x0a>;
         	clocks = <&clk IMX8MM_CLK_SAI1>;
@@ -863,13 +864,18 @@
 			MX8MM_IOMUXC_SAI1_TXC_SAI1_TX_BCLK	0xd6
 			MX8MM_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0	0xd6
 			MX8MM_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0	0xd6
-			// MX8MM_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		   // MIC_EN 6ul dts içindeki inveventhandler içine tanımlanacak.
 		>;
 	};
 
 	pinctrl_amp_en: amp_engrp {
 		fsl,pins = <
 			MX8MM_IOMUXC_SAI1_TXD7_GPIO4_IO19     0x19 // AMP_EN
+		>;
+	};
+
+	pinctrl_mic_en: mic_engrp {
+		fsl,pins = <
+			MX8MM_IOMUXC_SAI1_TXD6_GPIO4_IO18     0x19 // AMP_EN
 		>;
 	};
 

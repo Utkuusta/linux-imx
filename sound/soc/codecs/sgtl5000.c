@@ -164,6 +164,7 @@ struct sgtl5000_priv {
 	u16 mute_state[LAST_POWER_EVENT + 1];
 
 	struct gpio_desc *amp_en_pin;
+	struct gpio_desc *mic_en_pin;
 };
 
 static inline int hp_sel_input(struct snd_soc_component *component)
@@ -1730,6 +1731,20 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 
 		dev_err(&client->dev, "amp_en_pin setting low..\n");
 		gpiod_direction_output(sgtl5000->amp_en_pin, 0);
+	}
+
+	dev_err(&client->dev, "before sgtl5000->mic_en_pin\n");
+	sgtl5000->mic_en_pin = devm_gpiod_get(&client->dev, "mic-en", GPIOD_OUT_HIGH);
+	if (IS_ERR(sgtl5000->mic_en_pin)) {
+		ret = PTR_ERR(sgtl5000->mic_en_pin);
+		dev_err(&client->dev, "failed to request GPIO mic-en: %d\n", ret);
+	} else {
+		ret = gpiod_export(sgtl5000->mic_en_pin, 0);//no direction setting
+		if( ret == 0 )
+			gpiod_export_link(&client->dev, "mic-en", sgtl5000->mic_en_pin);
+
+		dev_err(&client->dev, "amp_en_pin setting high..\n");
+		gpiod_direction_output(sgtl5000->mic_en_pin, 1);
 	}
 
 	/*
