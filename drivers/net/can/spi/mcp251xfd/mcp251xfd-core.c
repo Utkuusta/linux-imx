@@ -151,7 +151,7 @@ mcp251xfd_transceiver_disable(const struct mcp251xfd_priv *priv)
 
 static int mcp251xfd_clks_and_vdd_enable(const struct mcp251xfd_priv *priv)
 {
-	/* int err; // disabled.MIDEP uses external osc and vdd.
+	int err; 
 
 	err = clk_prepare_enable(priv->clk);
 	if (err)
@@ -165,20 +165,20 @@ static int mcp251xfd_clks_and_vdd_enable(const struct mcp251xfd_priv *priv)
 	usleep_range(MCP251XFD_OSC_STAB_SLEEP_US,
 		     2 * MCP251XFD_OSC_STAB_SLEEP_US);
 
-	return err; */
+	return err;
 
 	return 0;
 }
 
 static int mcp251xfd_clks_and_vdd_disable(const struct mcp251xfd_priv *priv)
 {
-	/*int err; // disabled.MIDEP uses external osc and vdd.
+	int err;
 
 	err = mcp251xfd_vdd_disable(priv);
 	if (err)
 		return err;
 
-	clk_disable_unprepare(priv->clk); */
+	clk_disable_unprepare(priv->clk);
 
 	return 0;
 }
@@ -938,7 +938,8 @@ static int mcp251xfd_chip_ecc_init(struct mcp251xfd_priv *priv)
 	ecc->ecc_stat = 0;
 
 	if (priv->devtype_data.quirks & MCP251XFD_QUIRK_ECC)
-		val = MCP251XFD_REG_ECCCON_ECCEN;
+		val = 0;
+		//val = MCP251XFD_REG_ECCCON_ECCEN;
 
 	err = regmap_update_bits(priv->map_reg, MCP251XFD_REG_ECCCON,
 				 MCP251XFD_REG_ECCCON_ECCEN, val);
@@ -1013,7 +1014,9 @@ static int mcp251xfd_chip_interrupts_enable(const struct mcp251xfd_priv *priv)
 	if (err)
 		return err;
 
-	val = MCP251XFD_REG_ECCCON_DEDIE | MCP251XFD_REG_ECCCON_SECIE;
+	// val = MCP251XFD_REG_ECCCON_DEDIE | MCP251XFD_REG_ECCCON_SECIE;
+	val = 0;
+	
 	err = regmap_update_bits(priv->map_reg, MCP251XFD_REG_ECCCON, val, val);
 	if (err)
 		return err;
@@ -2850,13 +2853,12 @@ static int mcp251xfd_probe(struct spi_device *spi)
 	else if (IS_ERR(reg_xceiver))
 		return PTR_ERR(reg_xceiver);
 
-	/*clk = devm_clk_get(&spi->dev, NULL);
+	clk = devm_clk_get(&spi->dev, NULL);
 	if (IS_ERR(clk)) {
 		dev_err(&spi->dev, "No Oscillator (clock) defined.\n");
 		return PTR_ERR(clk);
-	}*/
-	// freq = clk_get_rate(clk);
-	freq = 20000000; // 20MHz external osc
+	}
+	freq = clk_get_rate(clk);
 
 	/* Sanity check */
 	if (freq < MCP251XFD_SYSCLOCK_HZ_MIN ||
@@ -2898,7 +2900,7 @@ static int mcp251xfd_probe(struct spi_device *spi)
 	priv->ndev = ndev;
 	priv->spi = spi;
 	priv->rx_int = rx_int;
-	// priv->clk = clk; MIDEP uses external osc
+	priv->clk = clk;
 	priv->reg_vdd = reg_vdd;
 	priv->reg_xceiver = reg_xceiver;
 
