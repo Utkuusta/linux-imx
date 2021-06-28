@@ -24,7 +24,7 @@
 	};
 
 	chosen {
-		stdout-path = &uart2;
+		stdout-path = &uart4;
 	};
 
 	leds {
@@ -142,21 +142,6 @@
 		};
 	};
 
-	/*sound {
-		compatible = "fsl,imx-audio-sgtl5000";
-		model = "imx8mm-sgtl5000";
-		ssi-controller = <&sai1>;
-		audio-codec = <&sgtl5000>;
-		//hp-det = <3 0>; // bizim boarda göre gpio ayarlanıp drivera eklenecek.HP_DETECT edildiyse MIC_EN 0 yapılacak.
-		//hp-det-gpios = <&gpio4 21 0>; // buraya interrupt tanımı yapılacak sadece,imx6ul'deki pcf'den alınarak.
-		audio-routing =
-			"MIC_IN", "Mic Jack",
-			"Mic Jack", "Mic Bias",
-			"LINE_IN", "Line In Jack",
-			"Headphone Jack", "HP_OUT",
-			"Ext Spk", "LINE_OUT";
-		status = "okay";
-	};*/
 
     	sound {
         	compatible = "simple-audio-card";
@@ -185,11 +170,33 @@
         	};   
     	};
 
-	sound-hdmi {
-		compatible = "fsl,imx-audio-hdmi";
-		model = "imx-audio-hdmi";
-		audio-cpu = <&sai2>;
-		hdmi-controller = <&mipidsi_to_hdmi>;
+	sound-i2s {
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "i2s-hdmi-audio";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,bitclock-master = <&dailinkhdmi_master>;
+		simple-audio-card,frame-master = <&dailinkhdmi_master>;
+
+		simple-audio-card,widgets =
+	 		"Headphone", "Headphone Jack";
+	 	simple-audio-card,routing =
+	 		"Headphone Jack", "TX";
+
+		dailinkhdmi_master: simple-audio-card,cpu {
+			sound-dai = <&sai2>;
+			dai-tdm-slot-num = <2>;
+			dai-tdm-slot-width = <32>;
+		};
+
+		simple-audio-card,codec {
+			sound-dai = <&hdmidummycodec>;
+			clocks = <&clk IMX8MM_CLK_SAI2_ROOT>;
+		};
+	};
+
+	hdmidummycodec: codec1 {
+		#sound-dai-cells = <0>;
+		compatible = "linux,bt-sco";
 		status = "okay";
 	};
 
@@ -315,7 +322,8 @@
 	status = "disabled";
 };
 
-&sai2 {
+&sai2 { // HDMI Sound
+	#sound-dai-cells = <0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai2>;
 	assigned-clocks = <&clk IMX8MM_CLK_SAI2>;
@@ -324,32 +332,23 @@
 	status = "okay";
 };
 
-&sai3 { // evkda bt pcm sai2, midepte sai3
+&sai3 { // BT Sound
 	#sound-dai-cells = <0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai3>;
 	assigned-clocks = <&clk IMX8MM_CLK_SAI3>;
 	assigned-clock-parents = <&clk IMX8MM_AUDIO_PLL1_OUT>;
 	assigned-clock-rates = <24576000>;
-	status = "disabled";
+	status = "okay";
 };
 
-&sai1 {
+&sai1 { // SGTL5000
 	#sound-dai-cells = <0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai1>;
 	assigned-clocks = <&clk IMX8MM_CLK_SAI1>;
 	assigned-clock-parents = <&clk IMX8MM_AUDIO_PLL1_OUT>;
 	assigned-clock-rates = <24576000>;
-	//clocks = <&clk IMX8MM_CLK_SAI1_IPG>, <&clk IMX8MM_CLK_DUMMY>,
-	//	<&clk IMX8MM_CLK_SAI1_ROOT>, <&clk IMX8MM_CLK_DUMMY>,
-	//	<&clk IMX8MM_CLK_DUMMY>, <&clk IMX8MM_AUDIO_PLL1_OUT>,
-	//	<&clk IMX8MM_AUDIO_PLL2_OUT>;
-	//clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3", "pll8k", "pll11k";
-	//fsl,sai-mclk-direction-output;
-	//fsl,sai-multi-lane;
-	//fsl,dataline,dsd = <0 0xff 0xff 2 0xff 0x11>;
-	//dmas = <&sdma2 0 25 0>, <&sdma2 1 25 0>;
 	status = "okay";
 };
 
@@ -371,7 +370,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart2>;
 	uart-has-rtscts;
-	// linux,rs485-enabled-at-boot-time;
+	linux,rs485-enabled-at-boot-time;
 	status = "okay";
 };
 
@@ -387,7 +386,7 @@
 &uart4 { /* console */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart4>;
-	status = "disabled";
+	status = "okay";
 };
 
 &usbotg1 {
