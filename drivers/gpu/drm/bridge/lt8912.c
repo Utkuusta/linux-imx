@@ -201,13 +201,13 @@ static void lt8912_init(struct lt8912 *lt)
 
 	regmap_write(lt->regmap[0], 0xb2, lt->sink_is_hdmi);
 
-	/* Audio Disable */
-	regmap_write(lt->regmap[2], 0x06, 0x00);
-	regmap_write(lt->regmap[2], 0x07, 0x00);
+	/* Audio Enable */
+	regmap_write(lt->regmap[2], 0x06, 0x08); // 0x00
+	regmap_write(lt->regmap[2], 0x07, 0xf0); // 0x00
 
-	regmap_write(lt->regmap[2], 0x34, 0xd2);
+	regmap_write(lt->regmap[2], 0x34, 0xd2); // 0xd2
 
-	regmap_write(lt->regmap[2], 0x3c, 0x41);
+	regmap_write(lt->regmap[2], 0x3c, 0x41); // 0x41
 
 	/* MIPIRxLogicRes */
 	regmap_write(lt->regmap[0], 0x03, 0x7f);
