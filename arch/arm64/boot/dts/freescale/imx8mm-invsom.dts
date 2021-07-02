@@ -129,7 +129,7 @@
 		simple-audio-card,bitclock-inversion;
 		simple-audio-card,frame-master = <&btcpu>;
 		simple-audio-card,bitclock-master = <&btcpu>;
-		status = "disabled";
+		status = "okay";
 
 		btcpu: simple-audio-card,cpu {
 			sound-dai = <&sai3>;
@@ -233,7 +233,7 @@
 &ecspi2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
-	status = "okay";
+	status = "disabled";
 
 	mcp251xfd: can@0 {
 		compatible = "microchip,mcp251xfd";
@@ -243,7 +243,7 @@
 		reg = <0>;
             	interrupts-extended = <&gpio1 8 IRQ_TYPE_LEVEL_LOW>;
 		spi-max-frequency = <20000000>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -379,7 +379,6 @@
 	pinctrl-0 = <&pinctrl_uart3>;
 	assigned-clocks = <&clk IMX8MM_CLK_UART3>;
 	assigned-clock-parents = <&clk IMX8MM_SYS_PLL1_80M>;
-	fsl,uart-has-rtscts;
 	status = "okay";
 };
 
@@ -710,11 +709,13 @@
 
 &iomuxc {
 	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog_1>;
 
-	// duzenle
-	// MX8MM_IOMUXC_SD1_DATA5_GPIO2_IO7 BT_WAKE_DEV
-	// MX8MM_IOMUXC_SD1_DATA6_GPIO2_IO8 BT_WAKE_HOST
-	// MX8MM_IOMUXC_SD1_DATA7_GPIO2_IO9 WL_WAKE_HOST
+	pinctrl_hog_1: hoggrp-1 {
+		fsl,pins = <
+			MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13	   0x184
+		>;
+	};
 	
 	pinctrl_gpio_hpd: gpio-hpd {
 		fsl,pins = <
@@ -933,8 +934,8 @@
 		fsl,pins = <
 			MX8MM_IOMUXC_ECSPI1_SCLK_UART3_DCE_RX		0x140
 			MX8MM_IOMUXC_ECSPI1_MOSI_UART3_DCE_TX		0x140
-			MX8MM_IOMUXC_ECSPI1_SS0_UART3_DCE_RTS_B		0x140
-			MX8MM_IOMUXC_ECSPI1_MISO_UART3_DCE_CTS_B	0x140
+			//MX8MM_IOMUXC_ECSPI1_SS0_UART3_DCE_RTS_B		0x140
+			//MX8MM_IOMUXC_ECSPI1_MISO_UART3_DCE_CTS_B	0x140
 		>;
 	};
 
