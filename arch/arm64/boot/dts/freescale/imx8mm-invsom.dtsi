@@ -346,6 +346,8 @@
 			polling-delay-passive = <250>;
 			polling-delay = <2000>;
 			thermal-sensors = <&tmu>;
+			status = "disabled";
+
 			trips {
 				cpu_alert0: trip0 {
 					temperature = <85000>;

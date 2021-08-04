@@ -276,6 +276,7 @@
 	pinctrl-0 = <&pinctrl_pcie0>;
 	disable-gpio = <&gpio3 22 GPIO_ACTIVE_LOW>;
 	reset-gpio = <&gpio3 21 GPIO_ACTIVE_LOW>;
+	clkreq-gpio = <&gpio3 20 GPIO_ACTIVE_LOW>;
 	clocks = <&clk IMX8MM_CLK_PCIE1_ROOT>,
 		 <&clk IMX8MM_CLK_PCIE1_AUX>,
 		 <&clk IMX8MM_CLK_PCIE1_PHY>,
@@ -283,7 +284,7 @@
 	clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
 	ext_osc = <1>;
 	reserved-region = <&rpmsg_reserved>;
-	status = "disabled";
+	status = "okay";
 };
 
 &pcie0_ep{
@@ -830,7 +831,7 @@
 
 	pinctrl_pcie0: pcie0grp {
 		fsl,pins = <
-			MX8MM_IOMUXC_SAI5_RXC_GPIO3_IO20	0x61 /* open drain, pull up */ // CLKREQ
+			MX8MM_IOMUXC_SAI5_RXC_GPIO3_IO20	0x41 /* open drain, pull up */ // CLKREQ
 			MX8MM_IOMUXC_SAI5_RXD1_GPIO3_IO22	0x41  // W_DISABLE
 			MX8MM_IOMUXC_SAI5_RXD0_GPIO3_IO21	0x41  // PERST0
 		>;
