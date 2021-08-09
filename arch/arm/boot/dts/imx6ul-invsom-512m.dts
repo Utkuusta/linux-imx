@@ -304,8 +304,7 @@
 	status = "okay";
 };
 
-/* for mfg */
-/*
+/* mfgtool icin USBOTG1 otg olmalı.UART3 ile pinler cakistigindan mfg icin build yapilacaksa UART3 disabled edilmeli.*/
 &usbotg1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usb_otg1_id>;
@@ -316,7 +315,6 @@
 	disable-over-current;
 	status = "okay";
 };
-*/
 
 &usbotg2 {
 	pinctrl-names = "default";
