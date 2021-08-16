@@ -1733,6 +1733,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		gpiod_direction_output(sgtl5000->amp_en_pin, 0);
 	}
 
+#if !CONFIG_SOC_INVSOM6UL
 	dev_err(&client->dev, "before sgtl5000->mic_en_pin\n");
 	sgtl5000->mic_en_pin = devm_gpiod_get(&client->dev, "mic-en", GPIOD_OUT_HIGH);
 	if (IS_ERR(sgtl5000->mic_en_pin)) {
@@ -1746,6 +1747,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		dev_err(&client->dev, "mic_en_pin setting high..\n");
 		gpiod_direction_output(sgtl5000->mic_en_pin, 1);
 	}
+#endif
 
 	/*
 	 * If VAG is powered-on (e.g. from previous boot), it would be disabled
