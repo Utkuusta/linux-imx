@@ -21,7 +21,7 @@
 
 	memory@80000000 {
 		device_type = "memory";
-		reg = <0x80000000 0x40000000>; /* 1 GB RAM*/
+		reg = <0x80000000 0x20000000>; /* 512 MB RAM*/
 	};
 
 	reserved-memory {
@@ -52,8 +52,8 @@
 		
 		amplifier-shutdown-gpio = <&enable_latch 3 GPIO_ACTIVE_LOW>;
 		gps-antenna-power-gpio = <&enable_latch 6 GPIO_ACTIVE_LOW>;
-		usb-host-power-gpio = <&enable_latch 8 GPIO_ACTIVE_HIGH>;
-		usb-otg1-power-gpio = <&enable_latch 10 GPIO_ACTIVE_HIGH>;
+		usb-host1-power-gpio = <&enable_latch 8 GPIO_ACTIVE_HIGH>;
+		usb-otg2-power-gpio = <&enable_latch 10 GPIO_ACTIVE_HIGH>;
 		ethernet1-power-gpio = <&enable_latch 12 GPIO_ACTIVE_LOW>;
 
 	};
@@ -297,6 +297,15 @@
 	status = "okay";
 };
 
+/* for runtime */
+&usbotg1 {
+	dr_mode = "host";
+	disable-over-current;
+	status = "okay";
+};
+
+/* mfgtool icin USBOTG1 otg olmalı.UART3 ile pinler cakistigindan mfg icin build yapilacaksa UART3 disabled edilmeli.*/
+/*
 &usbotg1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usb_otg1_id>;
@@ -307,9 +316,15 @@
 	disable-over-current;
 	status = "okay";
 };
+*/
 
 &usbotg2 {
-	dr_mode = "host";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usb_otg2>;
+	dr_mode = "otg";
+	srp-disable;
+	hnp-disable;
+	adp-disable;
 	disable-over-current;
 	status = "okay";
 };
@@ -503,8 +518,8 @@
 	
 	pinctrl_i2c2: i2c2grp {
 		fsl,pins = <
-			MX6UL_PAD_UART5_TX_DATA__I2C2_SCL 0x4001F0B1
-			MX6UL_PAD_UART5_RX_DATA__I2C2_SDA 0x4001F0B1
+			MX6UL_PAD_GPIO1_IO00__I2C2_SCL 0x4001F0B1
+			MX6UL_PAD_GPIO1_IO01__I2C2_SDA 0x4001F0B1
 		>;
 	};
 	
@@ -584,7 +599,7 @@
 	
 	pinctrl_usb_otg1_id: usbotg1idgrp {
 		fsl,pins = <
-			MX6UL_PAD_GPIO1_IO00__ANATOP_OTG1_ID	0x17059
+			MX6UL_PAD_UART3_TX_DATA__ANATOP_OTG1_ID	0x17059
 		>;
 	};
 		
@@ -595,6 +610,12 @@
 		>;
 	};
 	
+	pinctrl_usb_otg2: usbotg2grp {
+		fsl,pins = <
+            MX6UL_PAD_GPIO1_IO05__ANATOP_OTG2_ID	0x17059
+		>;
+	};
+
 	pinctrl_usdhc1: usdhc1grp {
 		fsl,pins = <
 			MX6UL_PAD_SD1_CMD__USDHC1_CMD     	0x17059
