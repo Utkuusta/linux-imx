@@ -334,6 +334,8 @@ static int pcf857x_probe(struct i2c_client *client,
 	gpio->out = ~n_latch;
 	gpio->status = gpio->out;
 
+	dev_info(&client->dev, "n_latch : %x, ~n_latch : %x\n", n_latch, (~n_latch & 0xFFFF));
+
 	status = devm_gpiochip_add_data(&client->dev, &gpio->chip, gpio);
 	if (status < 0)
 		goto fail;

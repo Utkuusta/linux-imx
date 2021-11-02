@@ -147,9 +147,9 @@
 &fec1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet1>;
-	phy-reset-gpios = <&enable_latch 13 GPIO_ACTIVE_LOW>; /* ENET1_nRST 0:reset active low */
+	phy-reset-gpios = <&enable_latch 13 GPIO_ACTIVE_HIGH>; /* ENET1_nRST reset active high (pcf ile phy-rst pini arasindaki mosfetten dolayi) */
 	phy-reset-duration = <1>;
-	/*phy-reset-active-high;*/
+	phy-reset-active-high;
 	phy-mode = "rmii";
 	phy-handle = <&ethphy0>;
 	status = "okay";
@@ -194,7 +194,19 @@
 		pinctrl-0 = <&pinctrl_pcf_irq>;		
 		gpio-controller;
 		#gpio-cells = <2>;
-		lines-initial-states = <0x4450>; //inputs and H output as 1, L output as 0
+		lines-initial-states = <0x6450>; //inputs and H output as 1, L output as 0
+		/* 0x6450 --> 0110 0100 0101 0000
+		   0x9BAF --> 1001 1011 1010 1111 (pinlere giden)
+		
+		P17 : 1
+		P16 : 0
+		P15 : 0
+		P14 : 1
+		P13 : 1
+		P12 : 0
+		...
+		
+		 */
 		interrupt-controller;
 		#interrupt-cells = <2>;
 		interrupt-parent = <&gpio1>;
