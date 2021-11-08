@@ -53,8 +53,8 @@
 		amplifier-shutdown-gpio = <&enable_latch 3 GPIO_ACTIVE_LOW>;
 		gps-antenna-power-gpio = <&enable_latch 6 GPIO_ACTIVE_LOW>;
 		usb-host-power-gpio = <&enable_latch 8 GPIO_ACTIVE_HIGH>;
-		usb-otg1-power-gpio = <&enable_latch 10 GPIO_ACTIVE_HIGH>;
-		ethernet1-power-gpio = <&enable_latch 12 GPIO_ACTIVE_LOW>;
+		usb-otg1-power-gpio = <&enable_latch 10 GPIO_ACTIVE_LOW>;
+		ethernet1-power-gpio = <&enable_latch 12 GPIO_ACTIVE_HIGH>;
 
 	};
 	

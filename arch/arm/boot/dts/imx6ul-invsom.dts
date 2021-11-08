@@ -53,8 +53,8 @@
 		amplifier-shutdown-gpio = <&enable_latch 3 GPIO_ACTIVE_LOW>;
 		gps-antenna-power-gpio = <&enable_latch 6 GPIO_ACTIVE_LOW>;
 		usb-host-power-gpio = <&enable_latch 8 GPIO_ACTIVE_HIGH>;
-		usb-otg1-power-gpio = <&enable_latch 10 GPIO_ACTIVE_HIGH>;
-		ethernet1-power-gpio = <&enable_latch 12 GPIO_ACTIVE_LOW>;
+		usb-otg1-power-gpio = <&enable_latch 10 GPIO_ACTIVE_LOW>;
+		ethernet1-power-gpio = <&enable_latch 12 GPIO_ACTIVE_HIGH>;
 
 	};
 	
@@ -599,14 +599,7 @@
 			MX6UL_PAD_GPIO1_IO00__ANATOP_OTG1_ID	0x17059
 		>;
 	};
-		
-	pinctrl_usb_otg1: usbotg1grp {
-		fsl,pins = <
-            MX6UL_PAD_GPIO1_IO02__USB_OTG2_PWR         0x000010B0
-            MX6UL_PAD_GPIO1_IO03__USB_OTG2_OC          0x000010B0
-		>;
-	};
-	
+
 	pinctrl_usdhc1: usdhc1grp {
 		fsl,pins = <
 			MX6UL_PAD_SD1_CMD__USDHC1_CMD     	0x17059
