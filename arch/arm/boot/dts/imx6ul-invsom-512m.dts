@@ -50,7 +50,7 @@
 		compatible = "inveventdrv";
 		status = "okay";
 		
-		amplifier-shutdown-gpio = <&enable_latch 3 GPIO_ACTIVE_LOW>;
+		amplifier-shutdown-gpio = <&enable_latch 3 GPIO_ACTIVE_HIGH>; // v1r1'de pin onune mosfet eklenmis.
 		gps-antenna-power-gpio = <&enable_latch 6 GPIO_ACTIVE_LOW>;
 		usb-host-power-gpio = <&enable_latch 8 GPIO_ACTIVE_HIGH>;
 		usb-otg1-power-gpio = <&enable_latch 10 GPIO_ACTIVE_LOW>;
@@ -194,9 +194,9 @@
 		pinctrl-0 = <&pinctrl_pcf_irq>;		
 		gpio-controller;
 		#gpio-cells = <2>;
-		lines-initial-states = <0x6450>; //inputs and H output as 1, L output as 0
-		/* 0x6450 --> 0110 0100 0101 0000
-		   0x9BAF --> 1001 1011 1010 1111 (pinlere giden)
+		lines-initial-states = <0x6458>; //inputs and H output as 1, L output as 0
+		/* 0x6458 --> 0110 0100 0101 1000
+		   0x9BA7 --> 1001 1011 1010 0111 (pinlere giden)
 		
 		P17 : 1
 		P16 : 0
