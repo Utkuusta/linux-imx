@@ -291,9 +291,11 @@
 	status = "okay";
 };
 
-&uart3 { /* rs232 */
+&uart3 { /* rs232 - rs485 */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart3>;
+	uart-has-rtscts;
+	linux,rs485-enabled-at-boot-time;	
 	status = "okay";
 };
 
@@ -577,6 +579,7 @@
 		fsl,pins = <
 			MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX	0x1b0b1
 			MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX	0x1b0b1
+			MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS	0x1b0b1
 		>;
 	};
 		
