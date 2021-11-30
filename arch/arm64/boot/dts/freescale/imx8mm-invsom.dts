@@ -715,6 +715,7 @@
 	pinctrl_hog_1: hoggrp-1 {
 		fsl,pins = <
 			MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13	   0x184
+			MX8MM_IOMUXC_SAI2_RXFS_GPIO4_IO21	   0x00000016
 		>;
 	};
 	
