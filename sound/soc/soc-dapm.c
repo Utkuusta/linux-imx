@@ -2560,8 +2560,12 @@ static int snd_soc_dapm_set_pin(struct snd_soc_dapm_context *dapm,
 	}
 
 	w->connected = status;
-	if (status == 0)
+	if (status == 0){
 		w->force = 0;
+		dev_err(dapm->dev, "Headphones removed.\n");
+	} else {
+		dev_err(dapm->dev, "Headphones plugged in.\n");
+	}
 
 	return 0;
 }
