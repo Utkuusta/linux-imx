@@ -234,7 +234,7 @@
 &ecspi2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
-	status = "disabled";
+	status = "okay";
 
 	mcp251xfd: can@0 {
 		compatible = "microchip,mcp251xfd";
@@ -244,7 +244,7 @@
 		reg = <0>;
             	interrupts-extended = <&gpio1 8 IRQ_TYPE_LEVEL_LOW>;
 		spi-max-frequency = <20000000>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
@@ -715,7 +715,7 @@
 
 	pinctrl_hog_1: hoggrp-1 {
 		fsl,pins = <
-			MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13	   0x184
+			//MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13	   0x184
 			MX8MM_IOMUXC_SAI2_RXFS_GPIO4_IO21	   0x00000016
 		>;
 	};
