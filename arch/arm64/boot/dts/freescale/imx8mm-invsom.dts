@@ -720,7 +720,8 @@
 
 	pinctrl_hog_1: hoggrp-1 {
 		fsl,pins = <
-			//MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13	   0x184
+			//MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13   0x184 // V1R0 arduino atmega328p reset pin.V1R0'da canbus ile ayni.V1R0 icin ikisi ayni anda aktif olmamali.
+			MX8MM_IOMUXC_GPIO1_IO15_GPIO1_IO15	   0x184 // V1R1 arduino atmega328p reset pin.V1R1'de ccm2 ile ayni.V1R1 icin ikisi ayni anda aktif olmamali.
 			MX8MM_IOMUXC_GPIO1_IO12_GPIO1_IO12	   0x184
 			MX8MM_IOMUXC_SAI2_RXFS_GPIO4_IO21	   0x00000016
 		>;
@@ -939,7 +940,7 @@
 		>;
 	};
 
-	pinctrl_uart3: uart3grp { // konnektörlere gidiyor,spi olarak dışarı.
+	pinctrl_uart3: uart3grp { // konnektörlere gidiyor,uart3 olarak dışarı.
 		fsl,pins = <
 			MX8MM_IOMUXC_ECSPI1_SCLK_UART3_DCE_RX		0x140
 			MX8MM_IOMUXC_ECSPI1_MOSI_UART3_DCE_TX		0x140
@@ -976,11 +977,11 @@
 		>;
 	};
 
-	pinctrl_ccm2: ccm2grp {
+	/* pinctrl_ccm2: ccm2grp {
 		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO15_CCMSRCGPCMIX_CLKO2	0x1c4
 		>;
-	};
+	}; */
 
 	pinctrl_usdhc1_gpio: usdhc1grpgpio {
 		fsl,pins = <
