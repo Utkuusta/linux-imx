@@ -375,7 +375,7 @@
 	status = "okay";
 };
 
-&uart2 { /* console - RS485 */
+&uart2 { /* RS485 */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart2>;
 	uart-has-rtscts;
@@ -720,8 +720,7 @@
 
 	pinctrl_hog_1: hoggrp-1 {
 		fsl,pins = <
-			//MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13   0x184 // V1R0 arduino atmega328p reset pin.V1R0'da canbus ile ayni.V1R0 icin ikisi ayni anda aktif olmamali.
-			MX8MM_IOMUXC_GPIO1_IO15_GPIO1_IO15	   0x184 // V1R1 arduino atmega328p reset pin.V1R1'de ccm2 ile ayni.V1R1 icin ikisi ayni anda aktif olmamali.
+			MX8MM_IOMUXC_GPIO1_IO15_GPIO1_IO15	   0x184 // V1R1 arduino atmega328p reset pin
 			MX8MM_IOMUXC_GPIO1_IO12_GPIO1_IO12	   0x184
 			MX8MM_IOMUXC_SAI2_RXFS_GPIO4_IO21	   0x00000016
 		>;
@@ -976,12 +975,6 @@
 			MX8MM_IOMUXC_GPIO1_IO14_CCMSRCGPCMIX_CLKO1	0x1c4
 		>;
 	};
-
-	/* pinctrl_ccm2: ccm2grp {
-		fsl,pins = <
-			MX8MM_IOMUXC_GPIO1_IO15_CCMSRCGPCMIX_CLKO2	0x1c4
-		>;
-	}; */
 
 	pinctrl_usdhc1_gpio: usdhc1grpgpio {
 		fsl,pins = <
