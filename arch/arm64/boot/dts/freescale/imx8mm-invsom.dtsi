@@ -905,7 +905,7 @@
 					 <&clk IMX8MM_CLK_UART3_ROOT>;
 				clock-names = "ipg", "per";
 				dmas = <&sdma1 26 4 0>, <&sdma1 27 4 0>;
-				dma-names = "rx", "tx";
+				dma-names = "", "";
 				status = "disabled";
 			};
 
