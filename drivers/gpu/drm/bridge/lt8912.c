@@ -361,13 +361,13 @@ static int lt8912_connector_get_modes(struct drm_connector *connector)
 static enum drm_mode_status lt8912_connector_mode_valid(struct drm_connector *connector,
 			     struct drm_display_mode *mode)
 {
-	if (mode->clock > 150000)
+	if (mode->clock > 170000)
 		return MODE_CLOCK_HIGH;
 
 	if (mode->hdisplay > 1920)
 		return MODE_BAD_HVALUE;
 
-	if (mode->vdisplay > 1080)
+	if (mode->vdisplay > 1200)
 		return MODE_BAD_VVALUE;
 
 	return MODE_OK;
