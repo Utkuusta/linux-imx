@@ -1297,7 +1297,7 @@ CONFIG_MTD_CFI_UTIL=y
 
 # CONFIG_MTD_ONENAND is not set
 # CONFIG_MTD_RAW_NAND is not set
-# CONFIG_MTD_SPI_NAND is not set
+CONFIG_MTD_SPI_NAND=y
 
 #
 # LPDDR & LPDDR2 PCM memory drivers
