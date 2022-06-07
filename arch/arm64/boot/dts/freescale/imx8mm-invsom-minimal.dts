@@ -21,6 +21,10 @@
 	};
 };
 
+&csi1_bridge {
+	status = "disabled";
+};
+
 &ecspi2 {
 	status = "disabled";
 };
@@ -53,6 +57,18 @@
 	status = "disabled";
 };
 
+&usdhc1 {
+	status = "disabled";
+};
+
+&usdhc2 {
+	status = "disabled";
+};
+
+&flexspi {
+	status = "disabled";
+};
+
 &i2c2 {
 	status = "disabled";
 };
@@ -60,6 +76,10 @@
 &i2c3 {
 	status = "disabled";
 };
+
+&mipi_csi_1 {
+	status = "disabled";
+};	
 
 &lcdif {
 	status = "disabled";
