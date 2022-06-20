@@ -12,6 +12,7 @@
 #include <linux/of.h>
 #include <linux/phy.h>
 #include <linux/module.h>
+#include <linux/delay.h>
 
 #define RTL821x_PHYSR				0x11
 #define RTL821x_PHYSR_DUPLEX			BIT(13)
@@ -88,6 +89,30 @@ static int rtl821x_probe(struct phy_device *phydev)
 		priv->quirks |= RTL821X_CLKOUT_EN_FEATURE;
 
 	phydev->priv = priv;
+
+	{
+		u16 val, resp;
+		dev_err(dev, "disabling eee function\n");
+		val = BIT(15);
+		resp = phy_modify_paged(phydev, 0x0, 0x0, val, val);
+		dev_err(dev, "phy reset %d, %d\n", resp, val);
+		msleep(20);
+		val = 0x1110;
+		resp = phy_write_paged(phydev, 0xa4b, 17, val);
+		dev_err(dev, "cmd2 %d, %d\n", resp, val);
+		val = 0x0007;
+		resp = phy_write_paged(phydev, 0, 13, val);
+		dev_err(dev, "mmd set addr mode %d, %d\n", resp, val);
+		val = 0x003c;
+		resp = phy_write(phydev, 14, val);
+		dev_err(dev, "mmd addr value %d, %d\n", resp, val);
+		val = 0x4007;
+		resp = phy_write(phydev, 13, val);
+		dev_err(dev, "mmd set data mode %d, %d\n", resp, val);
+		val = 0x0000;
+		resp = phy_write(phydev, 14, val);
+		dev_err(dev, "mmd set data %d, %d\n", resp, val);
+	}
 
 	return 0;
 }
