@@ -2,10 +2,14 @@
 /*
  * Copyright 2019 NXP
  */
-
+ 
+/*
+ * DTS for V1R0 SOM and V1R0 Carrier Board.
+ */
+ 
 /dts-v1/;
 
-#include "imx8mm-invsom.dts"
+#include "imx8mm-invsom-v1r1.dts"
 
 &iomuxc {
 	/delete-node/ pinctrl_hog_1; // delete MX8MM_IOMUXC_GPIO1_IO15_GPIO1_IO15 to use ccm2

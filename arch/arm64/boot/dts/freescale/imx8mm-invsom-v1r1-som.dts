@@ -3,6 +3,11 @@
  * Copyright 2019 NXP
  */
 
+/*
+ * DTS for V1R1 SOM including LBEE5QD1ZM wifi/bt chip.
+ * Compatible with V1R1 Carrier Board.
+ */
+
 /dts-v1/;
 
 #include <dt-bindings/usb/pd.h>

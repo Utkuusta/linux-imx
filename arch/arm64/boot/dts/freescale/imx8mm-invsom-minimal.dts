@@ -3,6 +3,10 @@
  * Copyright 2019 NXP
  */
 
+/*
+ * Mini DTS for both V1R0 and V1R1.
+ */
+
 /dts-v1/;
 
 #include "imx8mm-invsom.dts"

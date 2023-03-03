@@ -3,6 +3,11 @@
  * Copyright 2019 NXP
  */
 
+/*
+ * DTS for V1R0 SOM and V1R0 Carrier Board.
+ * Difference from normal V1R0 dts file is atmega328p reset pin.
+ */
+
 /dts-v1/;
 
 #include "imx8mm-invsom.dts"

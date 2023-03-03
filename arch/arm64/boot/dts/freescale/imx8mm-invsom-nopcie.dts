@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include "imx8mm-invsom.dts"
+#include "imx8mm-invsom-v1r1.dts"
 
 &pcie0 {
 	status = "disabled";
