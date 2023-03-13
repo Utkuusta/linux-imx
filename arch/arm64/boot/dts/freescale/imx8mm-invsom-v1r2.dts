@@ -62,14 +62,16 @@
 		clock-frequency = <100000000>;
 	};
 
-	reg_sd1_vmmc: sd1_regulator {
+	reg_usdhc1_vmmc: regulator-usdhc1 {
 		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_reg_usdhc1_vmmc>;		
 		regulator-name = "PMIC_EN";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		gpio = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 		off-on-delay-us = <20000>;
-		startup-delay-us = <100>;
+		startup-delay-us = <10000>;
 		enable-active-high;
 	};
 
@@ -202,14 +204,6 @@
 		model = "imx-audio-micfil";
 		cpu-dai = <&micfil>;
 		status = "okay";
-	};
-	
-	usdhc1_pwrseq: usdhc1_pwrseq {
-		compatible = "mmc-pwrseq-simple";
-		//compatible = "mmc-pwrseq-emmc";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_usdhc1_gpio>;
-		reset-gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
 	};
 	
 	inveventhandler {
@@ -411,15 +405,25 @@
 
 &usdhc1 { // wifi/bt
 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
-	pinctrl-0 = <&pinctrl_usdhc1>, <&pinctrl_usdhc1_gpio>;
-	pinctrl-1 = <&pinctrl_usdhc1_100mhz>, <&pinctrl_usdhc1_gpio>;
-	pinctrl-2 = <&pinctrl_usdhc1_200mhz>, <&pinctrl_usdhc1_gpio>;
+	pinctrl-0 = <&pinctrl_usdhc1>, <&pinctrl_wlan>;
+	pinctrl-1 = <&pinctrl_usdhc1_100mhz>, <&pinctrl_wlan>;
+	pinctrl-2 = <&pinctrl_usdhc1_200mhz>, <&pinctrl_wlan>;
 	bus-width = <4>;
-	vmmc-supply = <&reg_sd1_vmmc>;
-	pm-ignore-notify;
 	keep-power-in-suspend;
 	non-removable;
+	wakeup-source;
+	sd-uhs-sdr104;
+	vmmc-supply = <&reg_usdhc1_vmmc>;
+	//mmc-pwrseq = <&usdhc1_pwrseq>;
 	status = "okay";
+	
+	brcmf: bcrmf@1 {
+		reg = <1>;
+		compatible = "brcm,bcm4329-fmac";
+		interrupt-parent = <&gpio2>;
+		interrupts = <9 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "host-wake";
+	};	
 };
 
 &usdhc2 { 				// sd card
@@ -842,6 +846,12 @@
 		>;
 	};
 
+	pinctrl_reg_usdhc1_vmmc: regusdhc1vmmc { // WL_REG_ON
+		fsl,pins = <
+			MX8MM_IOMUXC_SD1_RESET_B_GPIO2_IO10	0x41
+		>;
+	};
+
 	pinctrl_reg_usdhc2_vmmc: regusdhc2vmmc {
 		fsl,pins = <
 			MX8MM_IOMUXC_SD2_RESET_B_GPIO2_IO19	0x41
@@ -963,12 +973,6 @@
 	pinctrl_ccm1: ccm1grp { // clockoutput
 		fsl,pins = <
 			MX8MM_IOMUXC_GPIO1_IO14_CCMSRCGPCMIX_CLKO1	0x1c4
-		>;
-	};
-
-	pinctrl_usdhc1_gpio: usdhc1grpgpio {
-		fsl,pins = <
-			MX8MM_IOMUXC_SD1_RESET_B_GPIO2_IO10	0x41 //wlregon
 		>;
 	};
 	
