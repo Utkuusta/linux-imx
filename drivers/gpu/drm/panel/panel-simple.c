@@ -474,6 +474,7 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
 
 	dev_set_drvdata(dev, panel);
 
+	dev_err(dev, "panel added\n");
 	return 0;
 
 free_ddc:
@@ -3634,6 +3635,34 @@ static const struct panel_desc_dsi lg_lh500wx1_sd03 = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode zs101_panel_mode = {
+	.clock = 70000,
+	.hdisplay = 800,
+	.hsync_start = 800 + 8,
+	.hsync_end = 800 + 8 + 30,
+	.htotal = 800 + 8 + 30 + 10,
+	.vdisplay = 1280,
+	.vsync_start = 1280 + 2,
+	.vsync_end = 1280 + 2 + 2,
+	.vtotal = 1280 + 2 + 2 + 2,
+	.vrefresh = 60,
+};
+
+static const struct panel_desc_dsi zs101_panel = {
+	.desc = {
+		.modes = &zs101_panel_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 135,
+			.height = 216,
+		},
+	},
+	.flags = MIPI_DSI_MODE_VIDEO,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
 static const struct drm_display_mode panasonic_vvx10f004b00_mode = {
 	.clock = 157200,
 	.hdisplay = 1920,
@@ -3745,6 +3774,9 @@ static const struct of_device_id dsi_of_match[] = {
 		.compatible = "osddisplays,osd101t2045-53ts",
 		.data = &osd101t2045_53ts
 	}, {
+		.compatible = "inv,zs101-panel",
+		.data = &zs101_panel
+	}, {
 		/* sentinel */
 	}
 };
@@ -3762,6 +3794,7 @@ static int panel_simple_dsi_probe(struct mipi_dsi_device *dsi)
 
 	desc = id->data;
 
+	dev_err(&dsi->dev, "initializing panel\n");
 	err = panel_simple_probe(&dsi->dev, &desc->desc);
 	if (err < 0)
 		return err;
