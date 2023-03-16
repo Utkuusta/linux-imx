@@ -81,10 +81,8 @@ static int tmu_get_temp(void *data, int *temp)
 
 	if (tmu->socdata->flags == FLAGS_TMU_VER1) {
 		val = readl_relaxed(tmu->base + TRITSR) & TRITSR_VAL_MASK;
-		if (val < TEMP_LOW_LIMIT){
-			printk("val < TEMP_LOW_LIMIT");
+		if (val < TEMP_LOW_LIMIT)
 			return -EAGAIN;
-		}
 	} else {
 		val = readl_relaxed(tmu->base + TRITSR);
 		ready = val & (1 << (sensor->hw_id + PROBE0_STATUS_OFFSET));
@@ -93,10 +91,8 @@ static int tmu_get_temp(void *data, int *temp)
 			val = (~(val & TEMP_VAL_MASK) + 1);
 
 		*temp = val;
-		if (!ready || *temp < -40 || *temp > 125){
-			printk("*temp < -40 || *temp > 125");
+		if (!ready || *temp < -40 || *temp > 125)
 			return -EAGAIN;
-		}
 	}
 
 	*temp = val * 1000;
