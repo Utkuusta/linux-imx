@@ -1766,9 +1766,6 @@ static int mxc_vidioc_s_input_crop(struct mxc_vout_output *vout,
 	if (crop->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
 		return -EINVAL;
 
-	if (crop->c.width < 0 || crop->c.height < 0)
-		return -EINVAL;
-
 	vout->task.input.crop.pos.x = crop->c.left;
 	vout->task.input.crop.pos.y = crop->c.top;
 	vout->task.input.crop.w = crop->c.width;
@@ -1868,9 +1865,7 @@ static int config_disp_output(struct mxc_vout_output *vout)
 	 * This procedure applies to non-overlay fbs as well.
 	 */
 	console_lock();
-	fbi->flags |= FBINFO_MISC_USEREVENT;
 	fb_blank(fbi, FB_BLANK_POWERDOWN);
-	fbi->flags &= ~FBINFO_MISC_USEREVENT;
 	console_unlock();
 
 	pos.x = 0;
@@ -1886,9 +1881,7 @@ static int config_disp_output(struct mxc_vout_output *vout)
 	var.yoffset = 0;
 	var.activate |= FB_ACTIVATE_FORCE;
 	console_lock();
-	fbi->flags |= FBINFO_MISC_USEREVENT;
 	ret = fb_set_var(fbi, &var);
-	fbi->flags &= ~FBINFO_MISC_USEREVENT;
 	console_unlock();
 	if (ret < 0) {
 		v4l2_err(vout->vfd->v4l2_dev,
@@ -1950,9 +1943,7 @@ static int config_disp_output(struct mxc_vout_output *vout)
 			*pixel++ = color;
 	}
 	console_lock();
-	fbi->flags |= FBINFO_MISC_USEREVENT;
 	ret = fb_blank(fbi, FB_BLANK_UNBLANK);
-	fbi->flags &= ~FBINFO_MISC_USEREVENT;
 	console_unlock();
 	vout->release = false;
 
@@ -1990,9 +1981,7 @@ static void release_disp_output(struct mxc_vout_output *vout)
 	if (vout->release)
 		return;
 	console_lock();
-	fbi->flags |= FBINFO_MISC_USEREVENT;
 	fb_blank(fbi, FB_BLANK_POWERDOWN);
-	fbi->flags &= ~FBINFO_MISC_USEREVENT;
 	console_unlock();
 
 	/* restore pos to 0,0 avoid fb pan display hang? */
@@ -2003,9 +1992,7 @@ static void release_disp_output(struct mxc_vout_output *vout)
 	if (get_ipu_channel(fbi) == MEM_BG_SYNC) {
 		console_lock();
 		fbi->fix.smem_start = vout->disp_bufs[0];
-		fbi->flags |= FBINFO_MISC_USEREVENT;
 		fb_blank(fbi, FB_BLANK_UNBLANK);
-		fbi->flags &= ~FBINFO_MISC_USEREVENT;
 		console_unlock();
 
 	}
@@ -2161,6 +2148,9 @@ static int mxc_vout_setup_output(struct mxc_vout_dev *dev)
 	struct mxc_vout_output *vout;
 	int i, ret = 0;
 
+	if (num_registered_fb == 0)
+		return -EPROBE_DEFER;
+
 	update_display_setting();
 
 	/* all output/overlay based on fb */
@@ -2198,7 +2188,7 @@ static int mxc_vout_setup_output(struct mxc_vout_dev *dev)
 		video_set_drvdata(vout->vfd, vout);
 
 		if (video_register_device(vout->vfd,
-			VFL_TYPE_GRABBER, video_nr + i) < 0) {
+			VFL_TYPE_VIDEO, video_nr + i) < 0) {
 			ret = -ENODEV;
 			break;
 		}

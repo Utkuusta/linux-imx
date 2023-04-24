@@ -4,13 +4,13 @@
  * Copyright 2020 NXP
  */
 
+#include <linux/media-bus-format.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
 #include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 #include <drm/bridge/fsl_imx_ldb.h>
-#include <drm/drmP.h>
 #include <drm/drm_of.h>
 #include <drm/drm_panel.h>
 
@@ -143,7 +143,8 @@ static void ldb_bridge_disable(struct drm_bridge *bridge)
 		pm_runtime_put(ldb->dev);
 }
 
-static int ldb_bridge_attach(struct drm_bridge *bridge)
+static int ldb_bridge_attach(struct drm_bridge *bridge,
+			     enum drm_bridge_attach_flags flags)
 {
 	struct ldb_channel *ldb_ch = bridge_to_ldb_ch(bridge);
 	struct ldb *ldb = ldb_ch->ldb;
@@ -157,7 +158,7 @@ static int ldb_bridge_attach(struct drm_bridge *bridge)
 		return 0;
 
 	return drm_bridge_attach(bridge->encoder,
-				ldb_ch->next_bridge, &ldb_ch->bridge);
+				ldb_ch->next_bridge, &ldb_ch->bridge, flags);
 }
 
 static const struct drm_bridge_funcs ldb_bridge_funcs = {
@@ -244,10 +245,8 @@ int ldb_bind(struct ldb *ldb, struct drm_encoder **encoder)
 		ldb_ch->child = child;
 
 		if (ldb_ch->panel) {
-			ldb_ch->next_bridge =
-					devm_drm_panel_bridge_add(dev,
-						ldb_ch->panel,
-						DRM_MODE_CONNECTOR_LVDS);
+			ldb_ch->next_bridge = devm_drm_panel_bridge_add(dev,
+								ldb_ch->panel);
 			if (IS_ERR(ldb_ch->next_bridge)) {
 				ret = PTR_ERR(ldb_ch->next_bridge);
 				goto free_child;
@@ -258,7 +257,7 @@ int ldb_bind(struct ldb *ldb, struct drm_encoder **encoder)
 		ldb_ch->bridge.funcs = &ldb_bridge_funcs;
 		ldb_ch->bridge.of_node = child;
 
-		ret = drm_bridge_attach(encoder[i], &ldb_ch->bridge, NULL);
+		ret = drm_bridge_attach(encoder[i], &ldb_ch->bridge, NULL, 0);
 		if (ret) {
 			dev_err(dev,
 				"failed to attach bridge with encoder: %d\n",

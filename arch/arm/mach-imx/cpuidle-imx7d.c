@@ -7,6 +7,7 @@
  */
 
 #include <linux/busfreq-imx.h>
+#include <linux/context_tracking.h>
 #include <linux/cpuidle.h>
 #include <linux/cpu_pm.h>
 #include <linux/delay.h>
@@ -24,7 +25,6 @@
 #include <asm/proc-fns.h>
 #include <asm/suspend.h>
 #include <asm/tlb.h>
-
 #include <uapi/linux/psci.h>
 
 #include "common.h"
@@ -163,7 +163,9 @@ static int imx7d_enter_low_power_idle(struct cpuidle_device *dev,
 		if (atomic_inc_return(&master_wait) == num_online_cpus())
 			imx_gpcv2_set_lpm_mode(WAIT_UNCLOCKED);
 
+		ct_idle_enter();
 		cpu_do_idle();
+		ct_idle_exit();
 
 		atomic_dec(&master_wait);
 		imx_gpcv2_set_lpm_mode(WAIT_CLOCKED);
@@ -185,7 +187,9 @@ static int imx7d_enter_low_power_idle(struct cpuidle_device *dev,
 			}
 			spin_unlock(&psci_lock);
 
+			ct_idle_enter();
 			cpu_suspend(0, imx7d_idle_finish);
+			ct_idle_exit();
 
 			spin_lock(&psci_lock);
 			if (atomic_read(&master_lpi) == num_online_cpus()) {
@@ -222,7 +226,9 @@ psci_skip_lpi_flow:
 				imx_set_cpu_jump(dev->cpu, ca7_cpu_resume);
 			}
 
+			ct_idle_enter();
 			cpu_suspend(0, imx7d_idle_finish);
+			ct_idle_exit();
 
 			if (cpuidle_pm_info->num_lpi_cpus ==
 					cpuidle_pm_info->num_online_cpus) {
@@ -251,16 +257,16 @@ static struct cpuidle_driver imx7d_cpuidle_driver = {
 		{
 			.exit_latency = 50,
 			.target_residency = 75,
-			.flags = CPUIDLE_FLAG_TIMER_STOP,
+			.flags = CPUIDLE_FLAG_TIMER_STOP | CPUIDLE_FLAG_RCU_IDLE,
 			.enter = imx7d_enter_low_power_idle,
 			.name = "WAIT",
 			.desc = "Clock off",
 		},
 		/* LOW POWER IDLE */
 		{
-			.exit_latency = 10000,
-			.target_residency = 20000,
-			.flags = CPUIDLE_FLAG_TIMER_STOP,
+			.exit_latency = 12000,
+			.target_residency = 22000,
+			.flags = CPUIDLE_FLAG_TIMER_STOP | CPUIDLE_FLAG_RCU_IDLE,
 			.enter = imx7d_enter_low_power_idle,
 			.name = "LOW-POWER-IDLE",
 			.desc = "ARM power off",

@@ -153,8 +153,6 @@ static struct vport_ops ovs_vxlan_netdev_vport_ops = {
 
 static int __init ovs_vxlan_tnl_init(void)
 {
-	printk("openvswitch: VXLAN switching port\n");
-
 	return ovs_vport_ops_register(&ovs_vxlan_netdev_vport_ops);
 }
 

@@ -26,17 +26,7 @@
 #include <sound/soc-dapm.h>
 #include <sound/initval.h>
 
-#include <linux/gpio/consumer.h>
 #include "sgtl5000.h"
-
-//ERHANY
-#include <linux/regmap.h>
-#include <linux/mfd/syscon.h>
-#include <linux/mfd/syscon/imx6q-iomuxc-gpr.h>
-#include <linux/clk.h>
-#include <linux/clk-provider.h>
-#define DEBUG
-
 
 #define SGTL5000_DAP_REG_OFFSET	0x0100
 #define SGTL5000_MAX_REG_OFFSET	0x013A
@@ -81,7 +71,7 @@ static const struct reg_default sgtl5000_reg_defaults[] = {
 	{ SGTL5000_DAP_EQ_BASS_BAND4,		0x002f },
 	{ SGTL5000_DAP_MAIN_CHAN,		0x8000 },
 	{ SGTL5000_DAP_MIX_CHAN,		0x0000 },
-	{ SGTL5000_DAP_AVC_CTRL,		0x0510 },
+	{ SGTL5000_DAP_AVC_CTRL,		0x5100 },
 	{ SGTL5000_DAP_AVC_THRESHOLD,		0x1473 },
 	{ SGTL5000_DAP_AVC_ATTACK,		0x0028 },
 	{ SGTL5000_DAP_AVC_DECAY,		0x0050 },
@@ -162,21 +152,18 @@ struct sgtl5000_priv {
 	u8 lrclk_strength;
 	u8 sclk_strength;
 	u16 mute_state[LAST_POWER_EVENT + 1];
-
-	struct gpio_desc *amp_en_pin;
-	struct gpio_desc *mic_en_pin;
 };
 
 static inline int hp_sel_input(struct snd_soc_component *component)
 {
-	return (snd_soc_component_read32(component, SGTL5000_CHIP_ANA_CTRL) &
+	return (snd_soc_component_read(component, SGTL5000_CHIP_ANA_CTRL) &
 		SGTL5000_HP_SEL_MASK) >> SGTL5000_HP_SEL_SHIFT;
 }
 
 static inline u16 mute_output(struct snd_soc_component *component,
 			      u16 mute_mask)
 {
-	u16 mute_reg = snd_soc_component_read32(component,
+	u16 mute_reg = snd_soc_component_read(component,
 					      SGTL5000_CHIP_ANA_CTRL);
 
 	snd_soc_component_update_bits(component, SGTL5000_CHIP_ANA_CTRL,
@@ -193,7 +180,7 @@ static inline void restore_output(struct snd_soc_component *component,
 
 static void vag_power_on(struct snd_soc_component *component, u32 source)
 {
-	if (snd_soc_component_read32(component, SGTL5000_CHIP_ANA_POWER) &
+	if (snd_soc_component_read(component, SGTL5000_CHIP_ANA_POWER) &
 	    SGTL5000_VAG_POWERUP)
 		return;
 
@@ -238,7 +225,7 @@ static int vag_power_consumers(struct snd_soc_component *component,
 
 static void vag_power_off(struct snd_soc_component *component, u32 source)
 {
-	u16 ana_pwr = snd_soc_component_read32(component,
+	u16 ana_pwr = snd_soc_component_read(component,
 					     SGTL5000_CHIP_ANA_POWER);
 
 	if (!(ana_pwr & SGTL5000_VAG_POWERUP))
@@ -558,7 +545,7 @@ static int dac_get_volsw(struct snd_kcontrol *kcontrol,
 	int l;
 	int r;
 
-	reg = snd_soc_component_read32(component, SGTL5000_CHIP_DAC_VOL);
+	reg = snd_soc_component_read(component, SGTL5000_CHIP_DAC_VOL);
 
 	/* get left channel volume */
 	l = (reg & SGTL5000_DAC_VOL_LEFT_MASK) >> SGTL5000_DAC_VOL_LEFT_SHIFT;
@@ -646,7 +633,7 @@ static int avc_get_threshold(struct snd_kcontrol *kcontrol,
 {
 	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
 	int db, i;
-	u16 reg = snd_soc_component_read32(component, SGTL5000_DAP_AVC_THRESHOLD);
+	u16 reg = snd_soc_component_read(component, SGTL5000_DAP_AVC_THRESHOLD);
 
 	/* register value 0 => -96dB */
 	if (!reg) {
@@ -788,7 +775,7 @@ static const struct snd_kcontrol_new sgtl5000_snd_controls[] = {
 };
 
 /* mute the codec used by alsa core */
-static int sgtl5000_digital_mute(struct snd_soc_dai *codec_dai, int mute)
+static int sgtl5000_mute_stream(struct snd_soc_dai *codec_dai, int mute, int direction)
 {
 	struct snd_soc_component *component = codec_dai->component;
 	u16 i2s_pwr = SGTL5000_I2S_IN_POWERUP;
@@ -1173,9 +1160,10 @@ static int sgtl5000_set_bias_level(struct snd_soc_component *component,
 
 static const struct snd_soc_dai_ops sgtl5000_ops = {
 	.hw_params = sgtl5000_pcm_hw_params,
-	.digital_mute = sgtl5000_digital_mute,
+	.mute_stream = sgtl5000_mute_stream,
 	.set_fmt = sgtl5000_set_dai_fmt,
 	.set_sysclk = sgtl5000_set_dai_sysclk,
+	.no_capture_mute = 1,
 };
 
 static struct snd_soc_dai_driver sgtl5000_dai = {
@@ -1199,7 +1187,7 @@ static struct snd_soc_dai_driver sgtl5000_dai = {
 		.formats = SGTL5000_FORMATS,
 	},
 	.ops = &sgtl5000_ops,
-	.symmetric_rates = 1,
+	.symmetric_rate = 1,
 };
 
 static bool sgtl5000_volatile(struct device *dev, unsigned int reg)
@@ -1338,11 +1326,11 @@ static int sgtl5000_set_power_regs(struct snd_soc_component *component)
 	}
 
 	/* reset value */
-	ana_pwr = snd_soc_component_read32(component, SGTL5000_CHIP_ANA_POWER);
+	ana_pwr = snd_soc_component_read(component, SGTL5000_CHIP_ANA_POWER);
 	ana_pwr |= SGTL5000_DAC_STEREO |
 			SGTL5000_ADC_STEREO |
 			SGTL5000_REFTOP_POWERUP;
-	lreg_ctrl = snd_soc_component_read32(component, SGTL5000_CHIP_LINREG_CTRL);
+	lreg_ctrl = snd_soc_component_read(component, SGTL5000_CHIP_LINREG_CTRL);
 
 	if (vddio < 3100 && vdda < 3100) {
 		/* enable internal oscillator used for charge pump */
@@ -1527,6 +1515,13 @@ err:
 	return ret;
 }
 
+static int sgtl5000_of_xlate_dai_id(struct snd_soc_component *component,
+				    struct device_node *endpoint)
+{
+	/* return dai id 0, whatever the endpoint index */
+	return 0;
+}
+
 static const struct snd_soc_component_driver sgtl5000_driver = {
 	.probe			= sgtl5000_probe,
 	.set_bias_level		= sgtl5000_set_bias_level,
@@ -1536,11 +1531,11 @@ static const struct snd_soc_component_driver sgtl5000_driver = {
 	.num_dapm_widgets	= ARRAY_SIZE(sgtl5000_dapm_widgets),
 	.dapm_routes		= sgtl5000_dapm_routes,
 	.num_dapm_routes	= ARRAY_SIZE(sgtl5000_dapm_routes),
+	.of_xlate_dai_id	= sgtl5000_of_xlate_dai_id,
 	.suspend_bias_off	= 1,
 	.idle_bias_on		= 1,
 	.use_pmdown_time	= 1,
 	.endianness		= 1,
-	.non_legacy_dai_naming	= 1,
 };
 
 static const struct regmap_config sgtl5000_regmap = {
@@ -1583,8 +1578,7 @@ static void sgtl5000_fill_defaults(struct i2c_client *client)
 	}
 }
 
-static int sgtl5000_i2c_probe(struct i2c_client *client,
-			      const struct i2c_device_id *id)
+static int sgtl5000_i2c_probe(struct i2c_client *client)
 {
 	struct sgtl5000_priv *sgtl5000;
 	int ret, reg, rev;
@@ -1609,56 +1603,6 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		goto disable_regs;
 	}
 
-//ERHANY
-#if CONFIG_SOC_INVSOM6UL
-	{
-		struct regmap *gpr;
-			gpr = syscon_regmap_lookup_by_compatible("fsl,imx6ul-iomuxc-gpr");
-			if (IS_ERR(gpr)) {
-				dev_err(&client->dev, "cannot find iomuxc registers\n");
-				return PTR_ERR(gpr);
-			}
-
-			regmap_update_bits(gpr, IOMUXC_GPR1, MCLK_DIR(2),
-					   MCLK_DIR(2));
-			dev_err(&client->dev, "mclk2 direction set\n");
-	}
-#endif
-	/*{
-		struct clk *busclk = devm_clk_get(&client->dev, "bus0");
-		if (IS_ERR(busclk)) {
-			ret = PTR_ERR(busclk);
-			dev_err(&client->dev, "Failed to get busclk: %d\n", ret);
-		} else {
-			ret = clk_prepare_enable(busclk);
-			if (ret) {
-				dev_err(&client->dev, "Error enabling busclk %d\n", ret);
-			}
-		}
-
-		busclk = devm_clk_get(&client->dev, "bus1");
-		if (IS_ERR(busclk)) {
-			ret = PTR_ERR(busclk);
-			dev_err(&client->dev, "Failed to get busclk1: %d\n", ret);
-		} else {
-			ret = clk_prepare_enable(busclk);
-			if (ret) {
-				dev_err(&client->dev, "Error enabling busclk1 %d\n", ret);
-			}
-		}
-
-		busclk = devm_clk_get(&client->dev, "bus2");
-		if (IS_ERR(busclk)) {
-			ret = PTR_ERR(busclk);
-			dev_err(&client->dev, "Failed to get busclk2: %d\n", ret);
-		} else {
-			ret = clk_prepare_enable(busclk);
-			if (ret) {
-				dev_err(&client->dev, "Error enabling busclk2 %d\n", ret);
-			}
-		}
-	}*/
-	dev_err(&client->dev, "before sgtl5000->mclk\n");
 	sgtl5000->mclk = devm_clk_get(&client->dev, NULL);
 	if (IS_ERR(sgtl5000->mclk)) {
 		ret = PTR_ERR(sgtl5000->mclk);
@@ -1666,30 +1610,27 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		if (ret == -ENOENT)
 			ret = -EPROBE_DEFER;
 
-		if (ret != -EPROBE_DEFER)
-			dev_err(&client->dev, "Failed to get mclock: %d\n",
-				ret);
+		dev_err_probe(&client->dev, ret, "Failed to get mclock\n");
+
 		goto disable_regs;
 	}
-	dev_err(&client->dev, "before clk_prepare_enable\n");
+
 	ret = clk_prepare_enable(sgtl5000->mclk);
 	if (ret) {
 		dev_err(&client->dev, "Error enabling clock %d\n", ret);
 		goto disable_regs;
-	}else {
-		dev_err(&client->dev, "mclock ready %d\n", ret);
 	}
 
 	/* Need 8 clocks before I2C accesses */
-	udelay(10);
-	dev_err(&client->dev, "before regmap_read-sgtl5000\n");
+	udelay(1);
+
 	/* read chip information */
 	ret = regmap_read(sgtl5000->regmap, SGTL5000_CHIP_ID, &reg);
 	if (ret) {
 		dev_err(&client->dev, "Error reading chip id %d\n", ret);
 		goto disable_clk;
 	}
-	dev_err(&client->dev, "before GTL5000_PARTID_MASK\n");
+
 	if (((reg & SGTL5000_PARTID_MASK) >> SGTL5000_PARTID_SHIFT) !=
 	    SGTL5000_PARTID_PART_ID) {
 		dev_err(&client->dev,
@@ -1701,7 +1642,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	rev = (reg & SGTL5000_REVID_MASK) >> SGTL5000_REVID_SHIFT;
 	dev_info(&client->dev, "sgtl5000 revision 0x%x\n", rev);
 	sgtl5000->revision = rev;
-	dev_err(&client->dev, "before SGTL5000_CHIP_CLK_CTRL\n");
+
 	/* reconfigure the clocks in case we're using the PLL */
 	ret = regmap_write(sgtl5000->regmap,
 			   SGTL5000_CHIP_CLK_CTRL,
@@ -1709,7 +1650,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	if (ret)
 		dev_err(&client->dev,
 			"Error %d initializing CHIP_CLK_CTRL\n", ret);
-	dev_err(&client->dev, "before SGTL5000_CHIP_ANA_CTRL\n");
+
 	/* Mute everything to avoid pop from the following power-up */
 	ret = regmap_write(sgtl5000->regmap, SGTL5000_CHIP_ANA_CTRL,
 			   SGTL5000_CHIP_ANA_CTRL_DEFAULT);
@@ -1719,36 +1660,6 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		goto disable_clk;
 	}
 
-	dev_err(&client->dev, "before sgtl5000->amp_en_pin\n");
-	sgtl5000->amp_en_pin = devm_gpiod_get(&client->dev, "amp-en", GPIOD_OUT_HIGH);
-	if (IS_ERR(sgtl5000->amp_en_pin)) {
-		ret = PTR_ERR(sgtl5000->amp_en_pin);
-		dev_err(&client->dev, "failed to request GPIO amp-en: %d\n", ret);
-	} else {
-		ret = gpiod_export(sgtl5000->amp_en_pin, 0);//no direction setting
-		if( ret == 0 )
-			gpiod_export_link(&client->dev, "amp-en", sgtl5000->amp_en_pin);
-
-		dev_err(&client->dev, "amp_en_pin setting low..\n");
-		gpiod_direction_output(sgtl5000->amp_en_pin, 0);
-	}
-
-#if !CONFIG_SOC_INVSOM6UL
-	dev_err(&client->dev, "before sgtl5000->mic_en_pin\n");
-	sgtl5000->mic_en_pin = devm_gpiod_get(&client->dev, "mic-en", GPIOD_OUT_HIGH);
-	if (IS_ERR(sgtl5000->mic_en_pin)) {
-		ret = PTR_ERR(sgtl5000->mic_en_pin);
-		dev_err(&client->dev, "failed to request GPIO mic-en: %d\n", ret);
-	} else {
-		ret = gpiod_export(sgtl5000->mic_en_pin, 0);//no direction setting
-		if( ret == 0 )
-			gpiod_export_link(&client->dev, "mic-en", sgtl5000->mic_en_pin);
-
-		dev_err(&client->dev, "mic_en_pin setting high..\n");
-		gpiod_direction_output(sgtl5000->mic_en_pin, 1);
-	}
-#endif
-
 	/*
 	 * If VAG is powered-on (e.g. from previous boot), it would be disabled
 	 * by the write to ANA_POWER in later steps of the probe code. This
@@ -1757,13 +1668,11 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 	 * cool-down time.
 	 */
 	ret = regmap_read(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, &value);
-	dev_err(&client->dev, "ana power : %d\n", value);
 	if (ret) {
 		dev_err(&client->dev, "Failed to read ANA_POWER: %d\n", ret);
 		goto disable_clk;
 	}
 	if (value & SGTL5000_VAG_POWERUP) {
-		dev_err(&client->dev, "value & SGTL5000_VAG_POWERUP\n");
 		ret = regmap_update_bits(sgtl5000->regmap,
 					 SGTL5000_CHIP_ANA_POWER,
 					 SGTL5000_VAG_POWERUP,
@@ -1778,7 +1687,6 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 
 	/* Follow section 2.2.1.1 of AN3663 */
 	ana_pwr = SGTL5000_ANA_POWER_DEFAULT;
-	dev_err(&client->dev, "num_supplies : %d\n", sgtl5000->num_supplies);
 	if (sgtl5000->num_supplies <= VDDD) {
 		/* internal VDDD at 1.2V */
 		ret = regmap_update_bits(sgtl5000->regmap,
@@ -1790,7 +1698,6 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 				"Error %d setting LINREG_VDDD\n", ret);
 
 		ana_pwr |= SGTL5000_LINEREG_D_POWERUP;
-		dev_err(&client->dev, "ana_pwr - if : %d\n", ana_pwr);
 		dev_info(&client->dev,
 			 "Using internal LDO instead of VDDD: check ER1 erratum\n");
 	} else {
@@ -1800,10 +1707,8 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		 */
 		ana_pwr &= ~(SGTL5000_STARTUP_POWERUP
 			     | SGTL5000_LINREG_SIMPLE_POWERUP);
-		dev_err(&client->dev, "ana_pwr - else : %d\n", ana_pwr);
 		dev_dbg(&client->dev, "Using external VDDD\n");
 	}
-	dev_err(&client->dev, "ana_pwr  : %d\n", ana_pwr);
 	ret = regmap_write(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, ana_pwr);
 	if (ret)
 		dev_err(&client->dev,
@@ -1874,26 +1779,33 @@ static int sgtl5000_i2c_probe(struct i2c_client *client,
 		goto disable_clk;
 
 	return 0;
-	dev_err(&client->dev, "before disable_clk\n");
+
 disable_clk:
 	clk_disable_unprepare(sgtl5000->mclk);
-	dev_err(&client->dev, "before disable_regs\n");
+
 disable_regs:
 	regulator_bulk_disable(sgtl5000->num_supplies, sgtl5000->supplies);
 	regulator_bulk_free(sgtl5000->num_supplies, sgtl5000->supplies);
-	dev_err(&client->dev, "before return ret\n");
+
 	return ret;
 }
 
-static int sgtl5000_i2c_remove(struct i2c_client *client)
+static void sgtl5000_i2c_remove(struct i2c_client *client)
 {
 	struct sgtl5000_priv *sgtl5000 = i2c_get_clientdata(client);
+
+	regmap_write(sgtl5000->regmap, SGTL5000_CHIP_CLK_CTRL, SGTL5000_CHIP_CLK_CTRL_DEFAULT);
+	regmap_write(sgtl5000->regmap, SGTL5000_CHIP_DIG_POWER, SGTL5000_DIG_POWER_DEFAULT);
+	regmap_write(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, SGTL5000_ANA_POWER_DEFAULT);
 
 	clk_disable_unprepare(sgtl5000->mclk);
 	regulator_bulk_disable(sgtl5000->num_supplies, sgtl5000->supplies);
 	regulator_bulk_free(sgtl5000->num_supplies, sgtl5000->supplies);
+}
 
-	return 0;
+static void sgtl5000_i2c_shutdown(struct i2c_client *client)
+{
+	sgtl5000_i2c_remove(client);
 }
 
 static const struct i2c_device_id sgtl5000_id[] = {
@@ -1911,11 +1823,12 @@ MODULE_DEVICE_TABLE(of, sgtl5000_dt_ids);
 
 static struct i2c_driver sgtl5000_i2c_driver = {
 	.driver = {
-		   .name = "sgtl5000",
-		   .of_match_table = sgtl5000_dt_ids,
-		   },
-	.probe = sgtl5000_i2c_probe,
+		.name = "sgtl5000",
+		.of_match_table = sgtl5000_dt_ids,
+	},
+	.probe_new = sgtl5000_i2c_probe,
 	.remove = sgtl5000_i2c_remove,
+	.shutdown = sgtl5000_i2c_shutdown,
 	.id_table = sgtl5000_id,
 };
 

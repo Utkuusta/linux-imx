@@ -60,7 +60,7 @@
 		clock-frequency = <8333333>;
 	};
 
-	scu {
+	system-controller {
 		compatible = "fsl,imx-scu";
 		mbox-names = "tx0", "tx1", "tx2", "tx3",
 			     "rx0", "rx1", "rx2", "rx3",
@@ -75,7 +75,7 @@
 			  &lsio_mu2 1 3
 			  &lsio_mu2 3 3>;
 
-		pd: imx8qx-pd {
+		pd: power-controller {
 			compatible = "fsl,imx8qm-scu-pd", "fsl,scu-pd";
 			#power-domain-cells = <1>;
 		};
@@ -83,8 +83,6 @@
 		clk: clock-controller {
 			compatible = "fsl,imx8qm-clk", "fsl,scu-clk";
 			#clock-cells = <2>;
-			clocks = <&xtal32k &xtal24m>;
-			clock-names = "xtal_32KHz", "xtal_24Mhz";
 		};
 
 		iomuxc: pinctrl {
@@ -132,9 +130,9 @@
 		#interrupt-cells = <1>;
 		interrupt-map-mask = <0 0 0 7>;
 		interrupt-map = <0 0 0 1 &gic GIC_SPI 124 IRQ_TYPE_EDGE_RISING>,
-				<0 0 0 1 &gic GIC_SPI 125 IRQ_TYPE_EDGE_RISING>,
-				<0 0 0 1 &gic GIC_SPI 126 IRQ_TYPE_EDGE_RISING>,
-				<0 0 0 1 &gic GIC_SPI 127 IRQ_TYPE_EDGE_RISING>;
+				<0 0 0 2 &gic GIC_SPI 125 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 3 &gic GIC_SPI 126 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 4 &gic GIC_SPI 127 IRQ_TYPE_EDGE_RISING>;
 		reg = <0x0 0xfd700000 0x0 0x100000>;
 		ranges = <0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
 	};
@@ -231,6 +229,10 @@
 };
 
 &usbotg3 {
+	/delete-property/ iommus;
+};
+
+&usbotg3_cdns3 {
 	/delete-property/ iommus;
 };
 

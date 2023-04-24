@@ -77,29 +77,6 @@
 #define IMX_OCOTP_READ_LOCKED_VAL	0xBADABADA
 
 static DEFINE_MUTEX(ocotp_mutex);
-static void __iomem *otp_base;
-static struct clk *otp_clk;
-
-enum fsl_otp_devtype {
-	FSL_OTP_MX6Q,
-	FSL_OTP_MX6DL,
-	FSL_OTP_MX6SX,
-	FSL_OTP_MX6SL,
-	FSL_OTP_MX6SLL,
-	FSL_OTP_MX6UL,
-	FSL_OTP_MX6ULL,
-	FSL_OTP_MX7D,
-	FSL_OTP_MX7ULP,
-};
-
-struct fsl_otp_devtype_data {
-	enum fsl_otp_devtype devtype;
-	const char **bank_desc;
-	int fuse_nums;
-	void (*set_otp_timing)(void);
-};
-
-static struct fsl_otp_devtype_data *fsl_otp;
 
 struct ocotp_priv {
 	struct device *dev;
@@ -121,6 +98,7 @@ struct ocotp_params {
 	unsigned int bank_address_words;
 	void (*set_timing)(struct ocotp_priv *priv);
 	struct ocotp_ctrl_reg ctrl;
+	bool reverse_mac_address;
 };
 
 static int imx_ocotp_wait_for_busy(struct ocotp_priv *priv, u32 flags)
@@ -195,11 +173,12 @@ static int imx_ocotp_read(void *context, unsigned int offset,
 	if (count > (priv->params->nregs - index))
 		count = priv->params->nregs - index;
 
-	mutex_lock(&ocotp_mutex);
-
 	p = kzalloc(num_bytes, GFP_KERNEL);
 	if (!p)
 		return -ENOMEM;
+
+	mutex_lock(&ocotp_mutex);
+
 	buf = p;
 
 	ret = clk_prepare_enable(priv->clk);
@@ -226,12 +205,11 @@ static int imx_ocotp_read(void *context, unsigned int offset,
 		 * software before any new write, read or reload access can be
 		 * issued
 		 */
-		if (*((u32*)buf) == IMX_OCOTP_READ_LOCKED_VAL)
+		if (*((u32 *)buf) == IMX_OCOTP_READ_LOCKED_VAL)
 			imx_ocotp_clr_err_if_set(priv);
 
 		buf += 4;
 	}
-	ret = 0;
 
 	index = offset % 4;
 	memcpy(val, &p[index], bytes);
@@ -245,11 +223,30 @@ read_end:
 	return ret;
 }
 
+static int imx_ocotp_cell_pp(void *context, const char *id, unsigned int offset,
+			     void *data, size_t bytes)
+{
+	struct ocotp_priv *priv = context;
+
+	/* Deal with some post processing of nvmem cell data */
+	if (id && !strcmp(id, "mac-address")) {
+		if (priv->params->reverse_mac_address) {
+			u8 *buf = data;
+			int i;
+
+			for (i = 0; i < bytes/2; i++)
+				swap(buf[i], buf[bytes - i - 1]);
+		}
+	}
+
+	return 0;
+}
+
 static void imx_ocotp_set_imx6_timing(struct ocotp_priv *priv)
 {
-	unsigned long clk_rate = 0;
+	unsigned long clk_rate;
 	unsigned long strobe_read, relax, strobe_prog;
-	u32 timing = 0;
+	u32 timing;
 
 	/* 47.3.1.3.1
 	 * Program HW_OCOTP_TIMING[STROBE_PROG] and HW_OCOTP_TIMING[RELAX]
@@ -299,9 +296,9 @@ static void imx_ocotp_set_imx6_timing(struct ocotp_priv *priv)
 
 static void imx_ocotp_set_imx7_timing(struct ocotp_priv *priv)
 {
-	unsigned long clk_rate = 0;
+	unsigned long clk_rate;
 	u64 fsource, strobe_prog;
-	u32 timing = 0;
+	u32 timing;
 
 	/* i.MX 7Solo Applications Processor Reference Manual, Rev. 0.1
 	 * 6.4.3.3
@@ -478,19 +475,15 @@ static int imx_ocotp_write(void *context, unsigned int offset, void *val,
 	       priv->base + IMX_OCOTP_ADDR_CTRL_SET);
 	ret = imx_ocotp_wait_for_busy(priv,
 				      priv->params->ctrl.bm_rel_shadows);
-	if (ret < 0) {
+	if (ret < 0)
 		dev_err(priv->dev, "timeout during shadow register reload\n");
-		goto write_end;
-	}
 
 write_end:
 	release_bus_freq(BUS_FREQ_HIGH);
 
 	clk_disable_unprepare(priv->clk);
 	mutex_unlock(&ocotp_mutex);
-	if (ret < 0)
-		return ret;
-	return bytes;
+	return ret < 0 ? ret : bytes;
 }
 
 static struct nvmem_config imx_ocotp_nvmem_config = {
@@ -500,6 +493,7 @@ static struct nvmem_config imx_ocotp_nvmem_config = {
 	.stride = 1,
 	.reg_read = imx_ocotp_read,
 	.reg_write = imx_ocotp_write,
+	.cell_post_process = imx_ocotp_cell_pp,
 };
 
 static const struct ocotp_params imx6q_params = {
@@ -562,6 +556,7 @@ static const struct ocotp_params imx8mq_params = {
 	.bank_address_words = 0,
 	.set_timing = imx_ocotp_set_imx6_timing,
 	.ctrl = IMX_OCOTP_BM_CTRL_DEFAULT,
+	.reverse_mac_address = true,
 };
 
 static const struct ocotp_params imx8mm_params = {
@@ -569,6 +564,7 @@ static const struct ocotp_params imx8mm_params = {
 	.bank_address_words = 0,
 	.set_timing = imx_ocotp_set_imx6_timing,
 	.ctrl = IMX_OCOTP_BM_CTRL_DEFAULT,
+	.reverse_mac_address = true,
 };
 
 static const struct ocotp_params imx8mn_params = {
@@ -576,6 +572,7 @@ static const struct ocotp_params imx8mn_params = {
 	.bank_address_words = 0,
 	.set_timing = imx_ocotp_set_imx6_timing,
 	.ctrl = IMX_OCOTP_BM_CTRL_DEFAULT,
+	.reverse_mac_address = true,
 };
 
 static const struct ocotp_params imx8mp_params = {
@@ -583,6 +580,7 @@ static const struct ocotp_params imx8mp_params = {
 	.bank_address_words = 0,
 	.set_timing = imx_ocotp_set_imx6_timing,
 	.ctrl = IMX_OCOTP_BM_CTRL_8MP,
+	.reverse_mac_address = true,
 };
 
 static const struct of_device_id imx_ocotp_dt_ids[] = {
@@ -617,12 +615,10 @@ static int imx_ocotp_probe(struct platform_device *pdev)
 	priv->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(priv->base))
 		return PTR_ERR(priv->base);
-	otp_base = priv->base;
 
 	priv->clk = devm_clk_get(dev, NULL);
 	if (IS_ERR(priv->clk))
 		return PTR_ERR(priv->clk);
-	otp_clk = priv->clk;
 
 	priv->params = of_device_get_match_data(&pdev->dev);
 	imx_ocotp_nvmem_config.size = 4 * priv->params->nregs;
@@ -638,106 +634,6 @@ static int imx_ocotp_probe(struct platform_device *pdev)
 
 	return PTR_ERR_OR_ZERO(nvmem);
 }
-
-static u32 fsl_otp_bank_physical(struct fsl_otp_devtype_data *d, int bank)
-{
-	u32 phy_bank;
-
-	if ((bank == 0) || (d->devtype == FSL_OTP_MX6SL) ||
-	    (d->devtype == FSL_OTP_MX7D) || (d->devtype == FSL_OTP_MX7ULP))
-		phy_bank = bank;
-	else if ((d->devtype == FSL_OTP_MX6UL) ||
-		 (d->devtype == FSL_OTP_MX6ULL) ||
-		 (d->devtype == FSL_OTP_MX6SLL)) {
-		if (bank >= 6)
-			phy_bank = fsl_otp_bank_physical(d, 5) + bank - 3;
-		else
-			phy_bank = bank;
-	} else {
-		if (bank >= 15)
-			phy_bank = fsl_otp_bank_physical(d, 14) + bank - 13;
-		else if (bank >= 6)
-			phy_bank = fsl_otp_bank_physical(d, 5) + bank - 3;
-		else
-			phy_bank = bank;
-	}
-
-	return phy_bank;
-}
-
-static u32 fsl_otp_word_physical(struct fsl_otp_devtype_data *d, int index)
-{
-	u32 phy_bank_off;
-	u32 word_off, bank_off;
-	u32 words_per_bank;
-
-	if (d->devtype == FSL_OTP_MX7D)
-		words_per_bank = 4;
-	else
-		words_per_bank = 8;
-
-	bank_off = index / words_per_bank;
-	word_off = index % words_per_bank;
-	phy_bank_off = fsl_otp_bank_physical(d, bank_off);
-
-	return phy_bank_off * words_per_bank + word_off;
-}
-
-static int otp_wait_busy(u32 flags)
-{
-	int count;
-	u32 c;
-
-	for (count = 10000; count >= 0; count--) {
-		c = __raw_readl(otp_base + IMX_OCOTP_ADDR_CTRL);
-		if (!(c & (IMX_OCOTP_BM_CTRL_BUSY | IMX_OCOTP_BM_CTRL_ERROR | flags)))
-			break;
-		cpu_relax();
-	}
-
-	if (count < 0)
-		return -ETIMEDOUT;
-
-	return 0;
-}
-
-#define OCOTP_SRK_OFF	0xC00
-#define OCOTP_SRKn(n)	(OCOTP_SRK_OFF + (n) * 0x10)
-#define HW_OCOTP_CUST_N(n)	(0x00000400 + (n) * 0x10)
-// Added for Inventron SOM
-int fsl_otp_read_hash(u8 *fuseHash) {
-	u8 ret;
-	unsigned int index = 14*8; //GP6
-	unsigned int phy_index;
-	u32 value = 0, i;
-	ret = clk_prepare_enable(otp_clk);
-	if (ret)
-		return -ENODEV;
-	mutex_lock(&ocotp_mutex);
-	pr_err("FuseHash:");
-	for(i=0; i<8; i++, index++) {
-		phy_index = fsl_otp_word_physical(fsl_otp, index);
-		fsl_otp->set_otp_timing();
-		ret = otp_wait_busy(0);
-		if (ret)
-			goto out;
-
-		value = __raw_readl(otp_base + HW_OCOTP_CUST_N(phy_index));
-		pr_err("0x%04x ", value);
-		//memcpy(&fuseHash[i*4], &value, sizeof(value));
-		fuseHash[i*4+ 3] = value & 0xFF;
-		fuseHash[i*4 + 2] = (value & 0xFF00) >> 8;
-		fuseHash[i*4 + 1] = (value & 0xFF0000) >> 16;
-		fuseHash[i*4] = (value & 0xFF000000) >> 24;
-	}
-	pr_err("\n");
-
- out:
-	mutex_unlock(&ocotp_mutex);
-	clk_disable_unprepare(otp_clk);
-	return 0;
-}
-EXPORT_SYMBOL(fsl_otp_read_hash);
 
 static struct platform_driver imx_ocotp_driver = {
 	.probe	= imx_ocotp_probe,

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2020 NXP
+ * Copyright 2020,2022 NXP
  */
 
 #include <dt-bindings/firmware/imx/rsrc.h>
 #include <linux/clk.h>
 #include <linux/component.h>
 #include <linux/firmware/imx/sci.h>
+#include <linux/media-bus-format.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
 #include <linux/phy/phy.h>
@@ -15,6 +16,7 @@
 #include <drm/bridge/fsl_imx_ldb.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_probe_helper.h>
+#include <drm/drm_simple_kms_helper.h>
 
 #include "imx-drm.h"
 
@@ -339,10 +341,6 @@ imx8qm_ldb_connector_helper_funcs = {
 	.best_encoder = imx8qm_ldb_connector_best_encoder,
 };
 
-static const struct drm_encoder_funcs imx8qm_ldb_encoder_funcs = {
-	.destroy = imx_drm_encoder_destroy,
-};
-
 static const struct drm_encoder_helper_funcs imx8qm_ldb_encoder_helper_funcs = {
 	.atomic_mode_set = imx8qm_ldb_encoder_atomic_mode_set,
 	.enable = imx8qm_ldb_encoder_enable,
@@ -395,13 +393,19 @@ imx8qm_ldb_bind(struct device *dev, struct device *master, void *data)
 	if (IS_ERR(imx8qm_ldb->clk_bypass))
 		return PTR_ERR(imx8qm_ldb->clk_bypass);
 
-	for (i = 0; i < LDB_CH_NUM; i++) {
+	for_each_child_of_node(np, child) {
+		ret = of_property_read_u32(child, "reg", &i);
+		if (ret || i < 0 || i > 1)
+			return -EINVAL;
+
+		if (!of_device_is_available(child))
+			continue;
+
 		encoder[i] = &imx8qm_ldb->channel[i].encoder;
 
 		drm_encoder_helper_add(encoder[i],
 				      &imx8qm_ldb_encoder_helper_funcs);
-		drm_encoder_init(drm, encoder[i], &imx8qm_ldb_encoder_funcs,
-				 DRM_MODE_ENCODER_LVDS, NULL);
+		drm_simple_encoder_init(drm, encoder[i], DRM_MODE_ENCODER_LVDS);
 	}
 
 	pm_runtime_enable(dev);
@@ -453,10 +457,9 @@ get_phy:
 
 	for (i = 0; i < LDB_CH_NUM; i++) {
 		ldb_ch = &imx8qm_ldb->channel[i].base;
-		if (!ldb_ch->is_valid) {
-			drm_encoder_cleanup(encoder[i]);
+
+		if (!ldb_ch->is_valid)
 			continue;
-		}
 
 		ret = imx_drm_encoder_parse_of(drm, encoder[i], ldb_ch->child);
 		if (ret)

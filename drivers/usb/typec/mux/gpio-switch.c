@@ -17,13 +17,13 @@
 #include <linux/usb/typec_mux.h>
 
 struct gpio_typec_switch {
-	struct typec_switch *sw;
+	struct typec_switch_dev *sw;
 	struct mutex lock;
 	struct gpio_desc *ss_sel;
 	struct gpio_desc *ss_reset;
 };
 
-static int switch_gpio_set(struct typec_switch *sw,
+static int switch_gpio_set(struct typec_switch_dev *sw,
 			   enum typec_orientation orientation)
 {
 	struct gpio_typec_switch *gpio_sw = typec_switch_get_drvdata(sw);
@@ -61,6 +61,7 @@ static int typec_switch_gpio_probe(struct platform_device *pdev)
 	sw_desc.drvdata = gpio_sw;
 	sw_desc.fwnode = dev->fwnode;
 	sw_desc.set = switch_gpio_set;
+	sw_desc.name = NULL;
 	mutex_init(&gpio_sw->lock);
 
 	/* Get the super speed mux reset GPIO, it's optional */

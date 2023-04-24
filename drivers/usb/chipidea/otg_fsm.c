@@ -25,7 +25,6 @@
 #include "ci.h"
 #include "bits.h"
 #include "otg.h"
-#include "udc.h"
 #include "otg_fsm.h"
 
 /* Add for otg: interact with user space app */
@@ -212,7 +211,6 @@ static unsigned otg_timer_ms[] = {
 	0,
 	TB_DATA_PLS,
 	TB_SSEND_SRP,
-	TA_DP_END,
 };
 
 /*
@@ -258,8 +256,10 @@ static void ci_otg_del_timer(struct ci_hdrc *ci, enum otg_fsm_timer t)
 	ci->enabled_otg_timer_bits &= ~(1 << t);
 	if (ci->next_otg_timer == t) {
 		if (ci->enabled_otg_timer_bits == 0) {
+			spin_unlock_irqrestore(&ci->lock, flags);
 			/* No enabled timers after delete it */
 			hrtimer_cancel(&ci->otg_fsm_hrtimer);
+			spin_lock_irqsave(&ci->lock, flags);
 			ci->next_otg_timer = NUM_OTG_FSM_TIMERS;
 		} else {
 			/* Find the next timer */
@@ -358,13 +358,6 @@ static int b_ssend_srp_tmout(struct ci_hdrc *ci)
 		return 1;
 }
 
-static int a_dp_end_tmout(struct ci_hdrc *ci)
-{
-	ci->fsm.a_bus_drop = 0;
-	ci->fsm.a_srp_det = 1;
-	return 0;
-}
-
 /*
  * Keep this list in the same order as timers indexed
  * by enum otg_fsm_timer in include/linux/usb/otg-fsm.h
@@ -382,7 +375,6 @@ static int (*otg_timer_handlers[])(struct ci_hdrc *) = {
 	NULL,			/* A_WAIT_ENUM */
 	b_data_pls_tmout,	/* B_DATA_PLS */
 	b_ssend_srp_tmout,	/* B_SSEND_SRP */
-	a_dp_end_tmout,		/* A_DP_END */
 };
 
 /*
@@ -469,7 +461,7 @@ static void ci_otg_drv_vbus(struct otg_fsm *fsm, int on)
 	struct ci_hdrc	*ci = container_of(fsm, struct ci_hdrc, fsm);
 
 	if (on) {
-		/* Enable power power */
+		/* Enable power */
 		hw_write(ci, OP_PORTSC, PORTSC_W1C_BITS | PORTSC_PP,
 							PORTSC_PP);
 		if (ci->platdata->reg_vbus) {
@@ -481,6 +473,10 @@ static void ci_otg_drv_vbus(struct otg_fsm *fsm, int on)
 				return;
 			}
 		}
+
+		if (ci->platdata->flags & CI_HDRC_PHY_VBUS_CONTROL)
+			usb_phy_vbus_on(ci->usb_phy);
+
 		/* Disable data pulse irq */
 		hw_write_otgsc(ci, OTGSC_DPIE, 0);
 
@@ -489,6 +485,9 @@ static void ci_otg_drv_vbus(struct otg_fsm *fsm, int on)
 	} else {
 		if (ci->platdata->reg_vbus)
 			regulator_disable(ci->platdata->reg_vbus);
+
+		if (ci->platdata->flags & CI_HDRC_PHY_VBUS_CONTROL)
+			usb_phy_vbus_off(ci->usb_phy);
 
 		fsm->a_bus_drop = 1;
 		fsm->a_bus_req = 0;
@@ -569,7 +568,10 @@ static int ci_otg_start_gadget(struct otg_fsm *fsm, int on)
 {
 	struct ci_hdrc	*ci = container_of(fsm, struct ci_hdrc, fsm);
 
-	ci_hdrc_gadget_connect(&ci->gadget, on);
+	if (on)
+		usb_gadget_vbus_connect(&ci->gadget);
+	else
+		usb_gadget_vbus_disconnect(&ci->gadget);
 
 	return 0;
 }
@@ -749,7 +751,8 @@ irqreturn_t ci_otg_fsm_irq(struct ci_hdrc *ci)
 	if (otg_int_src) {
 		if (otg_int_src & OTGSC_DPIS) {
 			hw_write_otgsc(ci, OTGSC_DPIS, OTGSC_DPIS);
-			ci_otg_add_timer(ci, A_DP_END);
+			fsm->a_srp_det = 1;
+			fsm->a_bus_drop = 0;
 		} else if (otg_int_src & OTGSC_IDIS) {
 			hw_write_otgsc(ci, OTGSC_IDIS, OTGSC_IDIS);
 			if (fsm->id == 0) {

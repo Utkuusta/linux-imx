@@ -639,7 +639,6 @@ static int ov5645_set_power_on(struct ov5645 *ov5645)
 {
 	int ret;
 
-	/* External clk and supply
 	ret = regulator_bulk_enable(OV5645_NUM_SUPPLIES, ov5645->supplies);
 	if (ret < 0)
 		return ret;
@@ -650,7 +649,6 @@ static int ov5645_set_power_on(struct ov5645 *ov5645)
 		regulator_bulk_disable(OV5645_NUM_SUPPLIES, ov5645->supplies);
 		return ret;
 	}
-	*/
 
 	usleep_range(5000, 15000);
 	gpiod_set_value_cansleep(ov5645->enable_gpio, 1);
@@ -667,11 +665,8 @@ static void ov5645_set_power_off(struct ov5645 *ov5645)
 {
 	gpiod_set_value_cansleep(ov5645->rst_gpio, 1);
 	gpiod_set_value_cansleep(ov5645->enable_gpio, 0);
-
-	/* External clk and supply
 	clk_disable_unprepare(ov5645->xclk);
 	regulator_bulk_disable(OV5645_NUM_SUPPLIES, ov5645->supplies);
-	*/
 }
 
 static int ov5645_s_power(struct v4l2_subdev *sd, int on)
@@ -842,22 +837,22 @@ static const struct v4l2_ctrl_ops ov5645_ctrl_ops = {
 };
 
 static int ov5645_enum_mbus_code(struct v4l2_subdev *sd,
-				 struct v4l2_subdev_pad_config *cfg,
+				 struct v4l2_subdev_state *sd_state,
 				 struct v4l2_subdev_mbus_code_enum *code)
 {
 	if (code->index > 0)
 		return -EINVAL;
 
-	code->code = MEDIA_BUS_FMT_UYVY8_2X8;
+	code->code = MEDIA_BUS_FMT_UYVY8_1X16;
 
 	return 0;
 }
 
 static int ov5645_enum_frame_size(struct v4l2_subdev *subdev,
-				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_state *sd_state,
 				  struct v4l2_subdev_frame_size_enum *fse)
 {
-	if (fse->code != MEDIA_BUS_FMT_UYVY8_2X8)
+	if (fse->code != MEDIA_BUS_FMT_UYVY8_1X16)
 		return -EINVAL;
 
 	if (fse->index >= ARRAY_SIZE(ov5645_mode_info_data))
@@ -873,13 +868,13 @@ static int ov5645_enum_frame_size(struct v4l2_subdev *subdev,
 
 static struct v4l2_mbus_framefmt *
 __ov5645_get_pad_format(struct ov5645 *ov5645,
-			struct v4l2_subdev_pad_config *cfg,
+			struct v4l2_subdev_state *sd_state,
 			unsigned int pad,
 			enum v4l2_subdev_format_whence which)
 {
 	switch (which) {
 	case V4L2_SUBDEV_FORMAT_TRY:
-		return v4l2_subdev_get_try_format(&ov5645->sd, cfg, pad);
+		return v4l2_subdev_get_try_format(&ov5645->sd, sd_state, pad);
 	case V4L2_SUBDEV_FORMAT_ACTIVE:
 		return &ov5645->fmt;
 	default:
@@ -888,23 +883,25 @@ __ov5645_get_pad_format(struct ov5645 *ov5645,
 }
 
 static int ov5645_get_format(struct v4l2_subdev *sd,
-			     struct v4l2_subdev_pad_config *cfg,
+			     struct v4l2_subdev_state *sd_state,
 			     struct v4l2_subdev_format *format)
 {
 	struct ov5645 *ov5645 = to_ov5645(sd);
 
-	format->format = *__ov5645_get_pad_format(ov5645, cfg, format->pad,
+	format->format = *__ov5645_get_pad_format(ov5645, sd_state,
+						  format->pad,
 						  format->which);
 	return 0;
 }
 
 static struct v4l2_rect *
-__ov5645_get_pad_crop(struct ov5645 *ov5645, struct v4l2_subdev_pad_config *cfg,
+__ov5645_get_pad_crop(struct ov5645 *ov5645,
+		      struct v4l2_subdev_state *sd_state,
 		      unsigned int pad, enum v4l2_subdev_format_whence which)
 {
 	switch (which) {
 	case V4L2_SUBDEV_FORMAT_TRY:
-		return v4l2_subdev_get_try_crop(&ov5645->sd, cfg, pad);
+		return v4l2_subdev_get_try_crop(&ov5645->sd, sd_state, pad);
 	case V4L2_SUBDEV_FORMAT_ACTIVE:
 		return &ov5645->crop;
 	default:
@@ -913,7 +910,7 @@ __ov5645_get_pad_crop(struct ov5645 *ov5645, struct v4l2_subdev_pad_config *cfg,
 }
 
 static int ov5645_set_format(struct v4l2_subdev *sd,
-			     struct v4l2_subdev_pad_config *cfg,
+			     struct v4l2_subdev_state *sd_state,
 			     struct v4l2_subdev_format *format)
 {
 	struct ov5645 *ov5645 = to_ov5645(sd);
@@ -922,8 +919,8 @@ static int ov5645_set_format(struct v4l2_subdev *sd,
 	const struct ov5645_mode_info *new_mode;
 	int ret;
 
-	__crop = __ov5645_get_pad_crop(ov5645, cfg, format->pad,
-			format->which);
+	__crop = __ov5645_get_pad_crop(ov5645, sd_state, format->pad,
+				       format->which);
 
 	new_mode = v4l2_find_nearest_size(ov5645_mode_info_data,
 			       ARRAY_SIZE(ov5645_mode_info_data),
@@ -947,11 +944,11 @@ static int ov5645_set_format(struct v4l2_subdev *sd,
 		ov5645->current_mode = new_mode;
 	}
 
-	__format = __ov5645_get_pad_format(ov5645, cfg, format->pad,
-			format->which);
+	__format = __ov5645_get_pad_format(ov5645, sd_state, format->pad,
+					   format->which);
 	__format->width = __crop->width;
 	__format->height = __crop->height;
-	__format->code = MEDIA_BUS_FMT_UYVY8_2X8;
+	__format->code = MEDIA_BUS_FMT_UYVY8_1X16;
 	__format->field = V4L2_FIELD_NONE;
 	__format->colorspace = V4L2_COLORSPACE_SRGB;
 
@@ -961,21 +958,21 @@ static int ov5645_set_format(struct v4l2_subdev *sd,
 }
 
 static int ov5645_entity_init_cfg(struct v4l2_subdev *subdev,
-				  struct v4l2_subdev_pad_config *cfg)
+				  struct v4l2_subdev_state *sd_state)
 {
 	struct v4l2_subdev_format fmt = { 0 };
 
-	fmt.which = cfg ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
+	fmt.which = sd_state ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
 	fmt.format.width = 1920;
 	fmt.format.height = 1080;
 
-	ov5645_set_format(subdev, cfg, &fmt);
+	ov5645_set_format(subdev, sd_state, &fmt);
 
 	return 0;
 }
 
 static int ov5645_get_selection(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_state *sd_state,
 			   struct v4l2_subdev_selection *sel)
 {
 	struct ov5645 *ov5645 = to_ov5645(sd);
@@ -983,7 +980,7 @@ static int ov5645_get_selection(struct v4l2_subdev *sd,
 	if (sel->target != V4L2_SEL_TGT_CROP)
 		return -EINVAL;
 
-	sel->r = *__ov5645_get_pad_crop(ov5645, cfg, sel->pad,
+	sel->r = *__ov5645_get_pad_crop(ov5645, sd_state, sel->pad,
 					sel->which);
 	return 0;
 }
@@ -1064,8 +1061,6 @@ static int ov5645_probe(struct i2c_client *client)
 	u32 xclk_freq;
 	int ret;
 
-	dev_err(dev, "ov5645 probing...\n");
-
 	ov5645 = devm_kzalloc(dev, sizeof(struct ov5645), GFP_KERNEL);
 	if (!ov5645)
 		return -ENOMEM;
@@ -1095,13 +1090,11 @@ static int ov5645_probe(struct i2c_client *client)
 	}
 
 	/* get system clock (xclk) */
-	/* External clk and supply
 	ov5645->xclk = devm_clk_get(dev, "xclk");
 	if (IS_ERR(ov5645->xclk)) {
 		dev_err(dev, "could not get xclk");
 		return PTR_ERR(ov5645->xclk);
 	}
-	*/
 
 	ret = of_property_read_u32(dev->of_node, "clock-frequency", &xclk_freq);
 	if (ret) {
@@ -1116,7 +1109,6 @@ static int ov5645_probe(struct i2c_client *client)
 		return -EINVAL;
 	}
 
-	/* External clk and supply
 	ret = clk_set_rate(ov5645->xclk, xclk_freq);
 	if (ret) {
 		dev_err(dev, "could not set xclk frequency\n");
@@ -1130,7 +1122,6 @@ static int ov5645_probe(struct i2c_client *client)
 				      ov5645->supplies);
 	if (ret < 0)
 		return ret;
-	*/
 
 	ov5645->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_HIGH);
 	if (IS_ERR(ov5645->enable_gpio)) {
@@ -1252,8 +1243,6 @@ static int ov5645_probe(struct i2c_client *client)
 
 	ov5645_entity_init_cfg(&ov5645->sd, NULL);
 
-	dev_err(dev, "ov5645 probed...\n");
-
 	return 0;
 
 power_down:
@@ -1267,7 +1256,7 @@ free_ctrl:
 	return ret;
 }
 
-static int ov5645_remove(struct i2c_client *client)
+static void ov5645_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct ov5645 *ov5645 = to_ov5645(sd);
@@ -1276,8 +1265,6 @@ static int ov5645_remove(struct i2c_client *client)
 	media_entity_cleanup(&ov5645->sd.entity);
 	v4l2_ctrl_handler_free(&ov5645->ctrls);
 	mutex_destroy(&ov5645->power_lock);
-
-	return 0;
 }
 
 static const struct i2c_device_id ov5645_id[] = {
@@ -1294,7 +1281,7 @@ MODULE_DEVICE_TABLE(of, ov5645_of_match);
 
 static struct i2c_driver ov5645_i2c_driver = {
 	.driver = {
-		.of_match_table = of_match_ptr(ov5645_of_match),
+		.of_match_table = ov5645_of_match,
 		.name  = "ov5645",
 	},
 	.probe_new = ov5645_probe,

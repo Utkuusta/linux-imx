@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2016 Freescale Semiconductor, Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2020 NXP
  *	Dong Aisheng <aisheng.dong@nxp.com>
  */
 
 #include <dt-bindings/clock/imx8-clock.h>
+#include <dt-bindings/clock/imx8-lpcg.h>
 #include <dt-bindings/firmware/imx/rsrc.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/pinctrl/pads-imx8qxp.h>
@@ -19,6 +21,7 @@
 	#size-cells = <2>;
 
 	aliases {
+		dpu0 = &dpu1;
 		ethernet0 = &fec1;
 		ethernet1 = &fec2;
 		gpio0 = &lsio_gpio0;
@@ -29,13 +32,20 @@
 		gpio5 = &lsio_gpio5;
 		gpio6 = &lsio_gpio6;
 		gpio7 = &lsio_gpio7;
-		dpu0 = &dpu1;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c3 = &i2c3;
 		ldb0 = &ldb1;
 		ldb1 = &ldb2;
 		mmc0 = &usdhc1;
 		mmc1 = &usdhc2;
 		mmc2 = &usdhc3;
+		mu0 = &lsio_mu0;
 		mu1 = &lsio_mu1;
+		mu2 = &lsio_mu2;
+		mu3 = &lsio_mu3;
+		mu4 = &lsio_mu4;
 		serial0 = &lpuart0;
 		serial1 = &lpuart1;
 		serial2 = &lpuart2;
@@ -52,7 +62,6 @@
 		can0 = &flexcan1;
 		can1 = &flexcan2;
 		can2 = &flexcan3;
-		i2c1 = &i2c_rpbus_1;
 		i2c5 = &i2c_rpbus_5;
 		i2c12 = &i2c_rpbus_12;
 		i2c13 = &i2c_rpbus_13;
@@ -60,6 +69,8 @@
 		i2c15 = &i2c_rpbus_15;
 		mipi_dsi0 = &mipi0_dsi_host;
 		mipi_dsi1 = &mipi1_dsi_host;
+		vpu_core0 = &vpu_core0;
+		vpu_core1 = &vpu_core1;
 	};
 
 	cpus: cpus {
@@ -72,6 +83,12 @@
 			compatible = "arm,cortex-a35";
 			reg = <0x0 0x0>;
 			enable-method = "psci";
+			i-cache-size = <0x8000>;
+			i-cache-line-size = <64>;
+			i-cache-sets = <256>;
+			d-cache-size = <0x8000>;
+			d-cache-line-size = <64>;
+			d-cache-sets = <128>;
 			next-level-cache = <&A35_L2>;
 			clocks = <&clk IMX_SC_R_A35 IMX_SC_PM_CLK_CPU>;
 			operating-points-v2 = <&a35_opp_table>;
@@ -83,6 +100,12 @@
 			compatible = "arm,cortex-a35";
 			reg = <0x0 0x1>;
 			enable-method = "psci";
+			i-cache-size = <0x8000>;
+			i-cache-line-size = <64>;
+			i-cache-sets = <256>;
+			d-cache-size = <0x8000>;
+			d-cache-line-size = <64>;
+			d-cache-sets = <128>;
 			next-level-cache = <&A35_L2>;
 			clocks = <&clk IMX_SC_R_A35 IMX_SC_PM_CLK_CPU>;
 			operating-points-v2 = <&a35_opp_table>;
@@ -94,6 +117,12 @@
 			compatible = "arm,cortex-a35";
 			reg = <0x0 0x2>;
 			enable-method = "psci";
+			i-cache-size = <0x8000>;
+			i-cache-line-size = <64>;
+			i-cache-sets = <256>;
+			d-cache-size = <0x8000>;
+			d-cache-line-size = <64>;
+			d-cache-sets = <128>;
 			next-level-cache = <&A35_L2>;
 			clocks = <&clk IMX_SC_R_A35 IMX_SC_PM_CLK_CPU>;
 			operating-points-v2 = <&a35_opp_table>;
@@ -105,6 +134,12 @@
 			compatible = "arm,cortex-a35";
 			reg = <0x0 0x3>;
 			enable-method = "psci";
+			i-cache-size = <0x8000>;
+			i-cache-line-size = <64>;
+			i-cache-sets = <256>;
+			d-cache-size = <0x8000>;
+			d-cache-line-size = <64>;
+			d-cache-sets = <128>;
 			next-level-cache = <&A35_L2>;
 			clocks = <&clk IMX_SC_R_A35 IMX_SC_PM_CLK_CPU>;
 			operating-points-v2 = <&a35_opp_table>;
@@ -113,6 +148,10 @@
 
 		A35_L2: l2-cache0 {
 			compatible = "cache";
+			cache-level = <2>;
+			cache-size = <0x80000>;
+			cache-line-size = <64>;
+			cache-sets = <1024>;
 		};
 	};
 
@@ -143,19 +182,8 @@
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
-	reserved-memory {
-		#address-cells = <2>;
-		#size-cells = <2>;
-		ranges;
-
-		dsp_reserved: dsp@92400000 {
-			reg = <0 0x92400000 0 0x2000000>;
-			no-map;
-		};
-	};
-
 	pmu {
-		compatible = "arm,armv8-pmuv3";
+		compatible = "arm,cortex-a35-pmu";
 		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
@@ -164,22 +192,16 @@
 		method = "smc";
 	};
 
-	scu {
+	system-controller {
 		compatible = "fsl,imx-scu";
-		mbox-names = "tx0", "tx1", "tx2", "tx3",
-			     "rx0", "rx1", "rx2", "rx3",
+		mbox-names = "tx0",
+			     "rx0",
 			     "gip3";
 		mboxes = <&lsio_mu1 0 0
-			  &lsio_mu1 0 1
-			  &lsio_mu1 0 2
-			  &lsio_mu1 0 3
 			  &lsio_mu1 1 0
-			  &lsio_mu1 1 1
-			  &lsio_mu1 1 2
-			  &lsio_mu1 1 3
 			  &lsio_mu1 3 3>;
 
-		pd: imx8qx-pd {
+		pd: power-controller {
 			compatible = "fsl,imx8qxp-scu-pd", "fsl,scu-pd";
 			#power-domain-cells = <1>;
 			wakeup-irq = <235 236 237 258 262 267 271
@@ -189,15 +211,13 @@
 		clk: clock-controller {
 			compatible = "fsl,imx8qxp-clk", "fsl,scu-clk";
 			#clock-cells = <2>;
-			clocks = <&xtal32k &xtal24m>;
-			clock-names = "xtal_32KHz", "xtal_24Mhz";
 		};
 
 		iomuxc: pinctrl {
 			compatible = "fsl,imx8qxp-iomuxc";
 		};
 
-		ocotp: imx8qx-ocotp {
+		ocotp: ocotp {
 			compatible = "fsl,imx8qxp-scu-ocotp";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -210,6 +230,13 @@
 			fec_mac1: mac@2c6 {
 				reg = <0x2c6 6>;
 			};
+		};
+
+		scu_key: keys {
+			compatible = "fsl,imx8qxp-sc-key", "fsl,imx-sc-key";
+			linux,keycodes = <KEY_POWER>;
+			wakeup-source;
+			status = "disabled";
 		};
 
 		rtc: rtc {
@@ -227,8 +254,7 @@
 		};
 
 		tsens: thermal-sensor {
-			compatible = "fsl,imx8qxp-sc-thermal";
-			tsens-num = <2>;
+			compatible = "fsl,imx8qxp-sc-thermal", "fsl,imx-sc-thermal";
 			#thermal-sensor-cells = <1>;
 		};
 	};
@@ -243,36 +269,6 @@
 			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>, /* Physical Non-Secure */
 			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>, /* Virtual */
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>; /* Hypervisor */
-	};
-
-	thermal_zones: thermal-zones {
-		cpu-thermal0 {
-			polling-delay-passive = <250>;
-			polling-delay = <2000>;
-			thermal-sensors = <&tsens 355>;
-			trips {
-				cpu_alert0: trip0 {
-					temperature = <107000>;
-					hysteresis = <2000>;
-					type = "passive";
-				};
-				cpu_crit0: trip1 {
-					temperature = <127000>;
-					hysteresis = <2000>;
-					type = "critical";
-				};
-			};
-			cooling-maps {
-				map0 {
-					trip = <&cpu_alert0>;
-					cooling-device =
-					<&A35_0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
-					<&A35_1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
-					<&A35_2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
-					<&A35_3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
-				};
-			};
-		};
 	};
 
 	clk_dummy: clock-dummy {
@@ -296,33 +292,46 @@
 		clock-output-names = "xtal_24MHz";
 	};
 
+	thermal_zones: thermal-zones {
+		cpu0-thermal {
+			polling-delay-passive = <250>;
+			polling-delay = <2000>;
+			thermal-sensors = <&tsens IMX_SC_R_SYSTEM>;
+
+			trips {
+				cpu_alert0: trip0 {
+					temperature = <107000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+
+				cpu_crit0: trip1 {
+					temperature = <127000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map0 {
+					trip = <&cpu_alert0>;
+					cooling-device =
+						<&A35_0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+						<&A35_1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+						<&A35_2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+						<&A35_3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+	};
+
 	imx_ion {
 		compatible = "fsl,mxc-ion";
 		fsl,heap-id = <0>;
 	};
 
-	rpmsg: rpmsg{
-		compatible = "fsl,imx8qxp-rpmsg";
-		/* up to now, the following channels are used in imx rpmsg
-		 * - tx1/rx1: messages channel.
-		 * - general interrupt1: remote proc finish re-init rpmsg stack
-		 *   when A core is partition reset.
-		 */
-		mbox-names = "tx", "rx", "rxdb";
-		mboxes = <&lsio_mu5 0 1
-			  &lsio_mu5 1 1
-			  &lsio_mu5 3 1>;
-		mub-partition = <3>;
-		status = "disabled";
-	};
-
-        sc_pwrkey: sc-powerkey {
-		compatible = "fsl,imx8-pwrkey";
-		linux,keycode = <KEY_POWER>;
-		wakeup-source;
-	};
-
 	/* sorted in register address */
+	#include "imx8-ss-img.dtsi"
 	#include "imx8-ss-security.dtsi"
 	#include "imx8-ss-cm40.dtsi"
 	#include "imx8-ss-vpu.dtsi"
@@ -332,17 +341,16 @@
 	#include "imx8-ss-ddr.dtsi"
 	#include "imx8-ss-lsio.dtsi"
 	#include "imx8-ss-hsio.dtsi"
-	#include "imx8-ss-img.dtsi"
 	#include "imx8-ss-gpu0.dtsi"
+	#include "imx8-ss-lcdif.dtsi"
 };
 
+#include "imx8qxp-ss-img.dtsi"
 #include "imx8qxp-ss-adma.dtsi"
 #include "imx8qxp-ss-conn.dtsi"
 #include "imx8qxp-ss-lsio.dtsi"
 #include "imx8qxp-ss-hsio.dtsi"
-#include "imx8qxp-ss-img.dtsi"
 #include "imx8qxp-ss-dc.dtsi"
-#include "imx8qxp-ss-lcdif.dtsi"
 #include "imx8qxp-ss-lvds.dtsi"
 #include "imx8qxp-ss-gpu.dtsi"
 
@@ -360,8 +368,4 @@
 	clocks = <&clk IMX_SC_R_A35 IMX_SC_PM_CLK_CPU>;
 	clock-latency = <61036>;
 	#cooling-cells = <2>;
-};
-
-&dsp {
-	memory-region = <&dsp_reserved>;
 };

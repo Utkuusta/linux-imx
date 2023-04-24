@@ -34,6 +34,32 @@
 		power-domains = <&pd IMX_SC_R_UART_4>;
 	};
 
+	i2c4: i2c@5a840000 {
+		compatible = "fsl,imx8qm-lpi2c", "fsl,imx7ulp-lpi2c";
+		reg = <0x5a840000 0x4000>;
+		interrupts = <GIC_SPI 344 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-parent = <&gic>;
+		clocks = <&i2c4_lpcg 0>,
+			 <&i2c4_lpcg 1>;
+		clock-names = "per", "ipg";
+		assigned-clocks = <&clk IMX_SC_R_I2C_4 IMX_SC_PM_CLK_PER>;
+		assigned-clock-rates = <24000000>;
+		power-domains = <&pd IMX_SC_R_I2C_4>;
+		status = "disabled";
+	};
+
+	i2c4_lpcg: clock-controller@5ac40000 {
+		compatible = "fsl,imx8qxp-lpcg";
+		reg = <0x5ac40000 0x10000>;
+		#clock-cells = <1>;
+		clocks = <&clk IMX_SC_R_I2C_4 IMX_SC_PM_CLK_PER>,
+			 <&dma_ipg_clk>;
+		bit-offset = <0 16>;
+		clock-output-names = "i2c4_lpcg_clk",
+				     "i2c4_lpcg_ipg_clk";
+		power-domains = <&pd IMX_SC_R_I2C_4>;
+	};
+
 	can1_lpcg: clock-controller@5ace0000 {
 		compatible = "fsl,imx8qxp-lpcg";
 		reg = <0x5ace0000 0x10000>;
@@ -62,21 +88,21 @@
 };
 
 &flexcan1 {
-	fsl,clk-source = <1>;
+	fsl,clk-source = /bits/ 8 <1>;
 };
 
 &flexcan2 {
 	clocks = <&can1_lpcg 1>,
 		 <&can1_lpcg 0>;
 	assigned-clocks = <&clk IMX_SC_R_CAN_1 IMX_SC_PM_CLK_PER>;
-	fsl,clk-source = <1>;
+	fsl,clk-source = /bits/ 8 <1>;
 };
 
 &flexcan3 {
 	clocks = <&can2_lpcg 1>,
 		 <&can2_lpcg 0>;
 	assigned-clocks = <&clk IMX_SC_R_CAN_2 IMX_SC_PM_CLK_PER>;
-	fsl,clk-source = <1>;
+	fsl,clk-source = /bits/ 8 <1>;
 };
 
 &lpspi2 {
@@ -85,7 +111,8 @@
 
 /* edma0 called in imx8qm RM with the same address in edma2 of imx8qxp */
 &edma2 {
-	reg = <0x5a200000 0x10000>, /* channel0 LPSPI0 rx */
+	reg = <0x5a1f0000 0x10000>,
+	      <0x5a200000 0x10000>, /* channel0 LPSPI0 rx */
 	      <0x5a210000 0x10000>, /* channel1 LPSPI0 tx */
 	      <0x5a220000 0x10000>, /* channel2 LPSPI1 rx */
 	      <0x5a230000 0x10000>, /* channel3 LPSPI1 tx */

@@ -7,6 +7,7 @@
 
 #include <linux/err.h>
 #include <linux/firmware/imx/sci.h>
+#include <linux/module.h>
 #include <linux/of_address.h>
 #include <linux/pinctrl/pinctrl.h>
 #include <linux/platform_device.h>
@@ -15,6 +16,8 @@
 #include "pinctrl-imx.h"
 
 enum pad_func_e {
+	IMX_SC_PAD_FUNC_SET_WAKEUP = 4,
+	IMX_SC_PAD_FUNC_GET_WAKEUP = 9,
 	IMX_SC_PAD_FUNC_SET = 15,
 	IMX_SC_PAD_FUNC_GET = 16,
 };
@@ -35,10 +38,18 @@ struct imx_sc_msg_resp_pad_get {
 	u32 val;
 } __packed;
 
+struct imx_sc_msg_gpio_set_pad_wakeup {
+	struct imx_sc_rpc_msg hdr;
+	u16 pad;
+	u8 wakeup;
+} __packed __aligned(4);
+
 static struct imx_sc_ipc *pinctrl_ipc_handle;
 
 int imx_pinctrl_sc_ipc_init(struct platform_device *pdev)
 {
+	imx_scu_irq_group_enable(IMX_SC_IRQ_GROUP_WAKE,
+					 IMX_SC_IRQ_PAD, true);
 	return imx_scu_get_handle(&pinctrl_ipc_handle);
 }
 EXPORT_SYMBOL_GPL(imx_pinctrl_sc_ipc_init);
@@ -79,6 +90,23 @@ int imx_pinconf_set_scu(struct pinctrl_dev *pctldev, unsigned pin_id,
 	unsigned int conf = configs[1];
 	unsigned int val;
 	int ret;
+
+	if (num_configs == 1) {
+		struct imx_sc_msg_gpio_set_pad_wakeup wmsg;
+
+		hdr = &wmsg.hdr;
+		hdr->ver = IMX_SC_RPC_VERSION;
+		hdr->svc = IMX_SC_RPC_SVC_PAD;
+		hdr->func = IMX_SC_PAD_FUNC_SET_WAKEUP;
+		hdr->size = 2;
+		wmsg.pad = pin_id;
+		wmsg.wakeup = *configs;
+		ret = imx_scu_call_rpc(pinctrl_ipc_handle, &wmsg, true);
+
+		dev_dbg(ipctl->dev, "wakeup pin_id: %d type: %ld\n",
+				pin_id, *configs);
+		return ret;
+	}
 
 	/*
 	 * Set mux and conf together in one IPC call
@@ -123,3 +151,7 @@ void imx_pinctrl_parse_pin_scu(struct imx_pinctrl *ipctl,
 		pin_scu->mux_mode, pin_scu->config);
 }
 EXPORT_SYMBOL_GPL(imx_pinctrl_parse_pin_scu);
+
+MODULE_AUTHOR("Dong Aisheng <aisheng.dong@nxp.com>");
+MODULE_DESCRIPTION("NXP i.MX SCU common pinctrl driver");
+MODULE_LICENSE("GPL v2");

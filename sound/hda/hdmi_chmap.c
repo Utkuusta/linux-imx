@@ -59,7 +59,7 @@ static const char * const cea_speaker_allocation_names[] = {
 /*
  * ELD SA bits in the CEA Speaker Allocation data block
  */
-static int eld_speaker_allocation_bits[] = {
+static const int eld_speaker_allocation_bits[] = {
 	[0] = FL | FR,
 	[1] = LFE,
 	[2] = FC,
@@ -774,7 +774,7 @@ static int hdmi_chmap_ctl_put(struct snd_kcontrol *kcontrol,
 	substream = snd_pcm_chmap_substream(info, ctl_idx);
 	if (!substream || !substream->runtime)
 		return 0; /* just for avoiding error from alsactl restore */
-	switch (substream->runtime->status->state) {
+	switch (substream->runtime->state) {
 	case SNDRV_PCM_STATE_OPEN:
 	case SNDRV_PCM_STATE_SETUP:
 		break;

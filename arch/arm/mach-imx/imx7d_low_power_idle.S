@@ -494,11 +494,6 @@
 	bic	r7, r7, #0x1
 	str	r7, [r10, #0x200]
 
-	/* disable LDO 1P0D */
-	ldr	r7, [r10, #0x210]
-	bic	r7, r7, #0x1
-	str	r7, [r10, #0x210]
-
 	/* disable LDO 1P2 */
 	ldr	r7, [r10, #0x220]
 	bic	r7, r7, #0x1
@@ -536,15 +531,6 @@
 	ldr	r7, [r10, #0x220]
 	ands	r7, #0x20000
 	beq	7b
-
-	/* enable LDO 1P0D */
-	ldr	r7, [r10, #0x210]
-	orr	r7, r7, #0x1
-	str	r7, [r10, #0x210]
-8:
-	ldr	r7, [r10, #0x210]
-	ands	r7, #0x20000
-	beq	8b
 
 	/* enable LDO 1P0A */
 	ldr	r7, [r10, #0x200]
@@ -641,13 +627,12 @@ ENTRY(imx7d_low_power_idle)
 	/*
 	 * enable the RBC bypass counter here
 	 * to hold off the interrupts. RBC counter
-	 * = 8 (240us). With this setting, the latency
+	 * = 8 (2ms). With this setting, the latency
 	 * from wakeup interrupt to ARM power up
-	 * is ~250uS.
+	 * is ~2ms.
 	 */
 	ldr	r8, [r10, #0x14]
-	bic	r8, r8, #(0x3f << 24)
-	orr	r8, r8, #(0x8 << 24)
+	orr	r8, r8, #(0x3f << 24)
 	str	r8, [r10, #0x14]
 
 	/* enable the counter. */

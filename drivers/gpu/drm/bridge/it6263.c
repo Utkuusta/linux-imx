@@ -12,13 +12,17 @@
  * for more details.
  */
 
-#include <drm/drmP.h>
+#include <drm/drm_vblank.h>
+#include <drm/drm_bridge.h>
+#include <drm/drm_drv.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_crtc_helper.h>
 #include <drm/drm_edid.h>
 #include <drm/drm_probe_helper.h>
+#include <drm/drm_print.h>
 #include <linux/gpio/consumer.h>
 #include <linux/i2c.h>
+#include <linux/media-bus-format.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_graph.h>
@@ -716,11 +720,17 @@ static void it6263_bridge_mode_set(struct drm_bridge *bridge,
 						AFE_IP_ER0 | AFE_IP_RESETB);
 }
 
-static int it6263_bridge_attach(struct drm_bridge *bridge)
+static int it6263_bridge_attach(struct drm_bridge *bridge,
+				enum drm_bridge_attach_flags flags)
 {
 	struct it6263 *it6263 = bridge_to_it6263(bridge);
 	struct drm_device *drm = bridge->dev;
 	int ret;
+
+	if (flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR) {
+		DRM_ERROR("Fix bridge driver to make connector optional!");
+		return -EINVAL;
+	}
 
 	if (!drm_core_check_feature(drm, DRIVER_ATOMIC)) {
 		dev_err(&it6263->hdmi_i2c->dev,
@@ -874,7 +884,7 @@ static int it6263_probe(struct i2c_client *client,
 	it6263->split_mode = of_property_read_bool(np, "split-mode");
 
 	it6263->hdmi_i2c = client;
-	it6263->lvds_i2c = i2c_new_dummy(client->adapter,
+	it6263->lvds_i2c = i2c_new_dummy_device(client->adapter,
 						LVDS_INPUT_CTRL_I2C_ADDR);
 	if (!it6263->lvds_i2c) {
 		ret = -ENODEV;
@@ -992,15 +1002,13 @@ of_reconfig:
 	return ret;
 }
 
-static int it6263_remove(struct i2c_client *client)
+static void it6263_remove(struct i2c_client *client)
 
 {
 	struct it6263 *it6263 = i2c_get_clientdata(client);
 
 	drm_bridge_remove(&it6263->bridge);
 	i2c_unregister_device(it6263->lvds_i2c);
-
-	return 0;
 }
 
 static const struct of_device_id it6263_dt_ids[] = {

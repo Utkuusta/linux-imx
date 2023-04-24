@@ -24,7 +24,7 @@
 #include <linux/delay.h>
 #include <linux/console.h>
 #include <linux/mxcfb.h>
-#include <linux/platform_data/dma-imx.h>
+#include <linux/dma/imx-dma.h>
 
 #include <media/videobuf-dma-contig.h>
 #include <media/v4l2-common.h>
@@ -1278,7 +1278,7 @@ static int pxp_probe(struct platform_device *pdev)
 	pxp->vdev->v4l2_dev = v4l2_dev;
 	video_set_drvdata(pxp->vdev, pxp);
 
-	err = video_register_device(pxp->vdev, VFL_TYPE_GRABBER, video_nr);
+	err = video_register_device(pxp->vdev, VFL_TYPE_VIDEO, video_nr);
 	if (err) {
 		dev_err(&pdev->dev, "failed to register video device\n");
 		goto freevdev;

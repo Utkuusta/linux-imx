@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Freescale Semiconductor, Inc.
+ * Copyright (C) 2011-2021 Freescale Semiconductor, Inc.
  *
  * The code contained herein is licensed under the GNU General Public
  * License. You may obtain a copy of the GNU General Public License
@@ -27,6 +27,7 @@
 #include <linux/irq.h>
 #include <linux/io.h>
 #include <linux/fb.h>
+#include <linux/fbcon.h>
 #include <linux/init.h>
 #include <linux/list.h>
 #include <linux/delay.h>
@@ -1763,6 +1764,8 @@ static void hdmi_disable_overflow_interrupts(void)
 
 static void mxc_hdmi_notify_fb(struct mxc_hdmi *hdmi)
 {
+	int ret;
+
 	dev_dbg(&hdmi->pdev->dev, "%s\n", __func__);
 
 	/* Don't notify if we aren't registered yet */
@@ -1779,9 +1782,9 @@ static void mxc_hdmi_notify_fb(struct mxc_hdmi *hdmi)
 	 */
 	hdmi->fbi->var.activate |= FB_ACTIVATE_FORCE;
 	console_lock();
-	hdmi->fbi->flags |= FBINFO_MISC_USEREVENT;
-	fb_set_var(hdmi->fbi, &hdmi->fbi->var);
-	hdmi->fbi->flags &= ~FBINFO_MISC_USEREVENT;
+	ret = fb_set_var(hdmi->fbi, &hdmi->fbi->var);
+	if (!ret)
+		fbcon_update_vcs(hdmi->fbi, hdmi->fbi->var.activate & FB_ACTIVATE_ALL);
 	console_unlock();
 
 	dev_dbg(&hdmi->pdev->dev, "%s exit\n", __func__);
@@ -1962,9 +1965,9 @@ static void mxc_hdmi_cable_connected(struct mxc_hdmi *hdmi)
 
 	case HDMI_EDID_FAIL:
 		mxc_hdmi_default_edid_cfg(hdmi);
-		/* fall through */
+		fallthrough;
 	case HDMI_EDID_NO_MODES:
-		/* fall through */
+		fallthrough;
 	default:
 		mxc_hdmi_default_modelist(hdmi);
 		break;
@@ -2709,6 +2712,12 @@ static void mxc_hdmi_disp_deinit(struct mxc_dispdrv_handle *disp)
 
 	dev_dbg(&hdmi->pdev->dev, "%s\n", __func__);
 
+	device_remove_file(&hdmi->pdev->dev, &dev_attr_fb_name);
+	device_remove_file(&hdmi->pdev->dev, &dev_attr_cable_state);
+	device_remove_file(&hdmi->pdev->dev, &dev_attr_edid);
+	device_remove_file(&hdmi->pdev->dev, &dev_attr_rgb_out_enable);
+	device_remove_file(&hdmi->pdev->dev, &dev_attr_hdcp_enable);
+
 	fb_unregister_client(&hdmi->nb);
 
 	clk_disable_unprepare(hdmi->hdmi_isfr_clk);
@@ -2717,8 +2726,6 @@ static void mxc_hdmi_disp_deinit(struct mxc_dispdrv_handle *disp)
 	clk_put(hdmi->hdmi_iahb_clk);
 	clk_disable_unprepare(hdmi->mipi_core_clk);
 	clk_put(hdmi->mipi_core_clk);
-
-	platform_device_unregister(hdmi->pdev);
 
 	hdmi_inited = false;
 }
@@ -2943,10 +2950,9 @@ static int mxc_hdmi_i2c_probe(struct i2c_client *client,
 	return 0;
 }
 
-static int mxc_hdmi_i2c_remove(struct i2c_client *client)
+static void mxc_hdmi_i2c_remove(struct i2c_client *client)
 {
 	hdmi_i2c = NULL;
-	return 0;
 }
 
 static const struct of_device_id imx_hdmi_i2c_match[] = {

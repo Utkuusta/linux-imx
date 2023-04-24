@@ -108,6 +108,8 @@ struct sun4i_csi {
 	/* Device resources */
 	struct device			*dev;
 
+	const struct sun4i_csi_traits	*traits;
+
 	void __iomem			*regs;
 	struct clk			*bus_clk;
 	struct clk			*isp_clk;
@@ -122,7 +124,7 @@ struct sun4i_csi {
 		dma_addr_t		paddr;
 	} scratch;
 
-	struct v4l2_fwnode_bus_parallel	bus;
+	struct v4l2_mbus_config_parallel	bus;
 
 	/* Main Device */
 	struct v4l2_device		v4l;
@@ -137,7 +139,6 @@ struct sun4i_csi {
 	struct v4l2_mbus_framefmt	subdev_fmt;
 
 	/* V4L2 Async variables */
-	struct v4l2_async_subdev	asd;
 	struct v4l2_async_notifier	notifier;
 	struct v4l2_subdev		*src_subdev;
 	int				src_pad;

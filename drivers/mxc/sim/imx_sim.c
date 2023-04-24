@@ -551,8 +551,6 @@ static int32_t sim_check_rec_data(u32 *reg_data)
 	if (*reg_data & SIM_REC_PARITY_ERROR)
 		err |= SIM_ERROR_PARITY;
 
-	if(err!=0)
-		pr_err("Sim Read error %04x\n", *reg_data);
 	return err;
 }
 
@@ -854,18 +852,12 @@ static irqreturn_t sim_irq_handler(int irq, void *dev_id)
 			if (rx_status & SIM_RCV_STATUS_BGT)
 				sim->errval |= SIM_ERROR_BGT;
 
-			if(rx_status & SIM_RCV_STATUS_RFD) {
-				sim->errval = 0;
-			}
-
 			sim_rcv_read_fifo(sim);
 			/*Add the state judgement to ensure the maybe complete has been impletment in the above "if" case*/
 			if (sim->state == SIM_STATE_RECEIVING) {
 				sim->state = SIM_STATE_RECEIVE_DONE;
 				complete(&sim->xfer_done);
 			}
-			if(rx_status != 0x150)
-				pr_debug("BWT/CWT Error 0x%04x\n", rx_status);
 		}
 	}
 
@@ -1107,18 +1099,6 @@ static int sim_set_baud_rate(struct sim_t *sim)
 		break;
 	case 3:
 		reg_data |= SIM_CNTL_BAUD_SEL(2);
-		break;
-	case 4:
-		reg_data |= SIM_CNTL_BAUD_SEL(3);
-		break;
-	case 5:
-		reg_data |= SIM_CNTL_BAUD_SEL(4);
-		break;
-	case 6: //di:6 512
-		reg_data |= SIM_CNTL_BAUD_SEL(5);
-		break;
-	case 7: //di:7 512
-		reg_data |= SIM_CNTL_BAUD_SEL(6);
 		break;
 	default:
 		pr_err("Invalid baud Di, Using default 372 / 1\n");
@@ -1534,7 +1514,7 @@ static long sim_ioctl(struct file *file,
 			sim_set_bwt(sim, 0);
 			sim_rx_irq_disable(sim);
 			errval = -SIM_E_TIMEOUT;
-			goto copy_data;
+			break;
 		}
 
 copy_data:
@@ -1676,7 +1656,7 @@ static int sim_open(struct inode *inode, struct file *file)
 	return 0;
 
 out_runtime_put:
-	pm_runtime_put(sim_dev.parent);
+	pm_runtime_put_sync(sim_dev.parent);
 	return errval;
 };
 
@@ -1693,7 +1673,7 @@ static int sim_release(struct inode *inode, struct file *file)
 	if (sim->present != SIM_PRESENT_REMOVED)
 		sim_deactivate(sim);
 
-	pm_runtime_put(sim_dev.parent);
+	pm_runtime_put_sync(sim_dev.parent);
 	sim->open_cnt = 0;
 
 	return 0;
@@ -1822,10 +1802,10 @@ static int sim_probe(struct platform_device *pdev)
 	ret = clk_prepare_enable(sim->clk);
 	if (ret)
 		return ret;
-	/* Let pm_runtime_put() disable the clock.
+	/* Let pm_runtime_put_snyc() disable the clock.
 	 * If CONFIG_PM is not enabled, the clock will stay powered.
 	 */
-	pm_runtime_put(&pdev->dev);
+	pm_runtime_put_sync(&pdev->dev);
 	sim->open_cnt = 0;
 
 	misc_register(&sim_dev);

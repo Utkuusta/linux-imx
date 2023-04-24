@@ -22,6 +22,7 @@
 #include <linux/pci.h>
 #include <linux/io.h>
 #include <linux/bitops.h>
+#include <linux/ethtool.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
@@ -30,6 +31,7 @@
 
 #define DRV_NAME "ivshmem-net"
 
+#define IVSHM_NET_STATE_UNKNOWN		(~0)
 #define IVSHM_NET_STATE_RESET		0
 #define IVSHM_NET_STATE_INIT		1
 #define IVSHM_NET_STATE_READY		2
@@ -88,6 +90,7 @@ struct ivshm_net {
 
 	struct napi_struct napi;
 
+	struct mutex state_lock;
 	u32 state;
 	u32 last_peer_state;
 	u32 *state_table;
@@ -547,12 +550,17 @@ static void ivshm_net_run(struct net_device *ndev)
 	if (!netif_running(ndev))
 		return;
 
+	if (in->last_peer_state == IVSHM_NET_STATE_RUN)
+		netif_carrier_on(ndev);
+
 	if (test_and_set_bit(IVSHM_NET_FLAG_RUN, &in->flags))
 		return;
 
 	netif_start_queue(ndev);
 	napi_enable(&in->napi);
+	local_bh_disable();
 	napi_schedule(&in->napi);
+	local_bh_enable();
 	ivshm_net_set_state(in, IVSHM_NET_STATE_RUN);
 }
 
@@ -565,6 +573,7 @@ static void ivshm_net_do_stop(struct net_device *ndev)
 	if (!test_and_clear_bit(IVSHM_NET_FLAG_RUN, &in->flags))
 		return;
 
+	netif_carrier_off(ndev);
 	netif_stop_queue(ndev);
 	napi_disable(&in->napi);
 }
@@ -574,6 +583,15 @@ static void ivshm_net_state_change(struct work_struct *work)
 	struct ivshm_net *in = container_of(work, struct ivshm_net, state_work);
 	struct net_device *ndev = in->napi.dev;
 	u32 peer_state = READ_ONCE(in->state_table[in->peer_id]);
+
+	mutex_lock(&in->state_lock);
+
+	if (peer_state == in->last_peer_state) {
+		mutex_unlock(&in->state_lock);
+		return;
+	}
+
+	in->last_peer_state = peer_state;
 
 	switch (in->state) {
 	case IVSHM_NET_STATE_RESET:
@@ -594,43 +612,40 @@ static void ivshm_net_state_change(struct work_struct *work)
 			ivshm_net_init_queues(ndev);
 			ivshm_net_set_state(in, IVSHM_NET_STATE_READY);
 
+			mutex_unlock(&in->state_lock);
+
 			rtnl_lock();
 			call_netdevice_notifiers(NETDEV_CHANGEADDR, ndev);
 			rtnl_unlock();
+
+			return;
 		}
 		break;
 
 	case IVSHM_NET_STATE_READY:
-		/*
-		 * Link is up and we are running once the remote is in READY or
-		 * RUN.
-		 */
-		if (peer_state >= IVSHM_NET_STATE_READY) {
-			netif_carrier_on(ndev);
-			ivshm_net_run(ndev);
-			break;
-		}
-		/* fall through */
 	case IVSHM_NET_STATE_RUN:
-		/*
-		 * If the remote goes to RESET, we need to follow immediately.
-		 */
-		if (peer_state == IVSHM_NET_STATE_RESET) {
-			netif_carrier_off(ndev);
+		if (peer_state >= IVSHM_NET_STATE_READY) {
+			/*
+			 * Link is up and we are running once the remote is in
+			 * READY or RUN.
+			 */
+			ivshm_net_run(ndev);
+		} else if (peer_state == IVSHM_NET_STATE_RESET) {
+			/*
+			 * If the remote goes to RESET, we need to follow
+			 * immediately.
+			 */
 			ivshm_net_do_stop(ndev);
 		}
 		break;
 	}
 
-	virt_wmb();
-	WRITE_ONCE(in->last_peer_state, peer_state);
+	mutex_unlock(&in->state_lock);
 }
 
 static void ivshm_net_check_state(struct ivshm_net *in)
 {
-	if (in->state_table[in->peer_id] != in->last_peer_state ||
-	    !test_bit(IVSHM_NET_FLAG_RUN, &in->flags))
-		queue_work(in->state_wq, &in->state_work);
+	queue_work(in->state_wq, &in->state_work);
 }
 
 static irqreturn_t ivshm_net_int_state(int irq, void *data)
@@ -663,17 +678,27 @@ static irqreturn_t ivshm_net_intx(int irq, void *data)
 
 static int ivshm_net_open(struct net_device *ndev)
 {
+	struct ivshm_net *in = netdev_priv(ndev);
+
 	netdev_reset_queue(ndev);
 	ndev->operstate = IF_OPER_UP;
+
+	mutex_lock(&in->state_lock);
 	ivshm_net_run(ndev);
+	mutex_unlock(&in->state_lock);
 
 	return 0;
 }
 
 static int ivshm_net_stop(struct net_device *ndev)
 {
+	struct ivshm_net *in = netdev_priv(ndev);
+
 	ndev->operstate = IF_OPER_DOWN;
+
+	mutex_lock(&in->state_lock);
 	ivshm_net_do_stop(ndev);
+	mutex_unlock(&in->state_lock);
 
 	return 0;
 }
@@ -830,6 +855,7 @@ static int ivshm_net_probe(struct pci_dev *pdev,
 	int vendor_cap;
 	u32 id, dword;
 	int ret;
+	char dev_addr[6];
 
 	ret = pcim_enable_device(pdev);
 	if (ret) {
@@ -939,6 +965,9 @@ static int ivshm_net_probe(struct pci_dev *pdev,
 
 	in->peer_id = !id;
 	in->pdev = pdev;
+	in->last_peer_state = IVSHM_NET_STATE_UNKNOWN;
+
+	mutex_init(&in->state_lock);
 
 	ret = ivshm_net_calc_qsize(ndev);
 	if (ret)
@@ -950,7 +979,8 @@ static int ivshm_net_probe(struct pci_dev *pdev,
 
 	INIT_WORK(&in->state_work, ivshm_net_state_change);
 
-	eth_random_addr(ndev->dev_addr);
+	eth_random_addr(dev_addr);
+	dev_addr_set(ndev, dev_addr);
 	ndev->netdev_ops = &ivshm_net_ops;
 	ndev->ethtool_ops = &ivshm_net_ethtool_ops;
 	ndev->mtu = min_t(u32, IVSHM_NET_MTU_DEF, in->qsize / 16);
@@ -960,7 +990,7 @@ static int ivshm_net_probe(struct pci_dev *pdev,
 	ndev->features = ndev->hw_features;
 
 	netif_carrier_off(ndev);
-	netif_napi_add(ndev, &in->napi, ivshm_net_poll, NAPI_POLL_WEIGHT);
+	netif_napi_add(ndev, &in->napi, ivshm_net_poll);
 
 	ret = register_netdev(ndev);
 	if (ret)

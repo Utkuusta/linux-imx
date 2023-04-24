@@ -25,7 +25,6 @@
 
 #define IMR_NUM			4
 #define GPC_MAX_IRQS            (IMR_NUM * 32)
-#define IMX8MP_MAX_IRQS         160
 
 #define GPC_IMR1_CORE0		0x30
 #define GPC_IMR1_CORE1		0x40
@@ -33,7 +32,6 @@
 #define GPC_IMR1_CORE3		0x1d0
 
 static unsigned int err11171;
-static unsigned int gpc_max_irqs;
 
 struct gpcv2_irqchip_data {
 	struct raw_spinlock	rlock;
@@ -43,7 +41,7 @@ struct gpcv2_irqchip_data {
 	u32			cpu2wakeup;
 };
 
-static struct gpcv2_irqchip_data *imx_gpcv2_instance;
+static struct gpcv2_irqchip_data *imx_gpcv2_instance __ro_after_init;
 
 static void __iomem *gpcv2_idx_to_reg(struct gpcv2_irqchip_data *cd, int i)
 {
@@ -87,20 +85,14 @@ static struct syscore_ops imx_gpcv2_syscore_ops = {
 	.resume		= gpcv2_wakeup_source_restore,
 };
 
-#ifdef CONFIG_ARM64
-static void (*__gic_v3_smp_cross_call)(const struct cpumask *, unsigned int);
-#endif
-
 #ifdef CONFIG_SMP
-static void imx_gpcv2_raise_softirq(const struct cpumask *mask,
+void imx_gpcv2_raise_softirq(const struct cpumask *mask,
 					  unsigned int irq)
 {
 	struct arm_smccc_res res;
 
-#ifdef CONFIG_ARM64
-	/* call the hijacked smp cross call handler */
-	__gic_v3_smp_cross_call(mask, irq);
-#endif
+	if (!err11171)
+		return;
 
 	/* now call into EL3 and take care of the wakeup */
 	arm_smccc_smc(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_CORE_WAKE,
@@ -118,19 +110,10 @@ static void imx_gpcv2_wake_request_fixup(void)
 
 	if (res.a0) {
 		pr_warn("irq-imx-gpcv2: EL3 does not support FSL_SIP_CONFIG_GPC_CORE_WAKE, disabling cpuidle.\n");
+		err11171 = false;
 		disable_cpuidle();
 		return;
 	}
-
-#ifdef CONFIG_ARM64
-	/* hijack the already registered smp cross call handler */
-	__gic_v3_smp_cross_call = __smp_cross_call;
-#endif
-
-#ifdef CONFIG_SMP
-	/* register our workaround handler for smp cross call */
-	set_smp_cross_call(imx_gpcv2_raise_softirq);
-#endif
 
 	iomux_gpr = syscon_regmap_lookup_by_compatible("fsl,imx6q-iomuxc-gpr");
 	if (!IS_ERR(iomux_gpr))
@@ -310,7 +293,7 @@ static int imx_gpcv2_domain_alloc(struct irq_domain *domain,
 	if (err)
 		return err;
 
-	if (hwirq >= gpc_max_irqs)
+	if (hwirq >= GPC_MAX_IRQS)
 		return -EINVAL;
 
 	for (i = 0; i < nr_irqs; i++) {
@@ -334,7 +317,6 @@ static const struct irq_domain_ops gpcv2_irqchip_data_domain_ops = {
 static const struct of_device_id gpcv2_of_match[] = {
 	{ .compatible = "fsl,imx7d-gpc",  .data = (const void *) 2 },
 	{ .compatible = "fsl,imx8mq-gpc", .data = (const void *) 4 },
-	{ .compatible = "fsl,imx8mp-gpc", .data = (const void *) 4 },
 	{ /* END */ }
 };
 
@@ -367,10 +349,8 @@ static int __init imx_gpcv2_irqchip_init(struct device_node *node,
 	}
 
 	cd = kzalloc(sizeof(struct gpcv2_irqchip_data), GFP_KERNEL);
-	if (!cd) {
-		pr_err("%pOF: kzalloc failed!\n", node);
+	if (!cd)
 		return -ENOMEM;
-	}
 
 	raw_spin_lock_init(&cd->rlock);
 
@@ -381,12 +361,7 @@ static int __init imx_gpcv2_irqchip_init(struct device_node *node,
 		return -ENOMEM;
 	}
 
-	if (of_machine_is_compatible("fsl,imx8mp"))
-		gpc_max_irqs = IMX8MP_MAX_IRQS;
-	else
-		gpc_max_irqs = GPC_MAX_IRQS;
-
-	domain = irq_domain_add_hierarchy(parent_domain, 0, gpc_max_irqs,
+	domain = irq_domain_add_hierarchy(parent_domain, 0, GPC_MAX_IRQS,
 				node, &gpcv2_irqchip_data_domain_ops, cd);
 	if (!domain) {
 		iounmap(cd->gpc_base);
@@ -395,8 +370,7 @@ static int __init imx_gpcv2_irqchip_init(struct device_node *node,
 	}
 	irq_set_default_host(domain);
 
-	if (of_machine_is_compatible("fsl,imx8mq") ||
-	    of_machine_is_compatible("fsl,imx8mp")) {
+	if (of_machine_is_compatible("fsl,imx8mq")) {
 		/* sw workaround for IPI can't wakeup CORE
 		ERRATA(ERR011171) on i.MX8MQ */
 		err11171 = true;
@@ -410,7 +384,7 @@ static int __init imx_gpcv2_irqchip_init(struct device_node *node,
 			case 4:
 				writel_relaxed(~0, reg + GPC_IMR1_CORE2);
 				writel_relaxed(~0, reg + GPC_IMR1_CORE3);
-				/* fall through */
+				fallthrough;
 			case 2:
 				writel_relaxed(~0, reg + GPC_IMR1_CORE0);
 				writel_relaxed(~0, reg + GPC_IMR1_CORE1);
@@ -444,4 +418,3 @@ static int __init imx_gpcv2_irqchip_init(struct device_node *node,
 
 IRQCHIP_DECLARE(imx_gpcv2_imx7d, "fsl,imx7d-gpc", imx_gpcv2_irqchip_init);
 IRQCHIP_DECLARE(imx_gpcv2_imx8mq, "fsl,imx8mq-gpc", imx_gpcv2_irqchip_init);
-IRQCHIP_DECLARE(imx_gpcv2_imx8mp, "fsl,imx8mp-gpc", imx_gpcv2_irqchip_init);

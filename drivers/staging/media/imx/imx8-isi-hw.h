@@ -31,7 +31,7 @@
 #define  CHNL_CTRL_CHNL_BYPASS_MASK		0x20000000
 #define  CHNL_CTRL_CHNL_BYPASS_ENABLE		1
 #define  CHNL_CTRL_CHAIN_BUF_OFFSET		25
-#define  CHNL_CTRL_CHAIN_BUF_MASK		0x60000
+#define  CHNL_CTRL_CHAIN_BUF_MASK		0x6000000
 #define  CHNL_CTRL_CHAIN_BUF_NO_CHAIN		0
 #define  CHNL_CTRL_CHAIN_BUF_2_CHAIN		1
 #define  CHNL_CTRL_SW_RST_OFFSET		24
@@ -439,7 +439,8 @@ void mxc_isi_channel_set_flip(struct mxc_isi_dev *mxc_isi);
 void mxc_isi_channel_set_alpha(struct mxc_isi_dev *mxc_isi);
 void mxc_isi_channel_set_chain_buf(struct mxc_isi_dev *mxc_isi);
 void mxc_isi_channel_set_deinterlace(struct mxc_isi_dev *mxc_isi);
-void mxc_isi_channel_set_crop(struct mxc_isi_dev *mxc_isi);
+void mxc_isi_channel_set_crop(struct mxc_isi_dev *mxc_isi,
+			      struct mxc_isi_frame *dst_f);
 void mxc_isi_channel_set_memory_image(struct mxc_isi_dev *mxc_isi);
 void mxc_isi_channel_set_panic_threshold(struct mxc_isi_dev *mxc_isi);
 

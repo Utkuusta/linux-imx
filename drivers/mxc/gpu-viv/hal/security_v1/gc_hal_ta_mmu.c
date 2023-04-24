@@ -2,7 +2,7 @@
 *
 *    The MIT License (MIT)
 *
-*    Copyright (c) 2014 - 2020 Vivante Corporation
+*    Copyright (c) 2014 - 2022 Vivante Corporation
 *
 *    Permission is hereby granted, free of charge, to any person obtaining a
 *    copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 *
 *    The GPL License (GPL)
 *
-*    Copyright (C) 2014 - 2020 Vivante Corporation
+*    Copyright (C) 2014 - 2022 Vivante Corporation
 *
 *    This program is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU General Public License
@@ -414,7 +414,7 @@ gctaMMU_GetPageEntry(
     gctUINT32 mtlbEntry;
     gctBOOL secure = Address > gcdMMU_SECURE_AREA_START;
 
-    gcmkHEADER_ARG("Mmu=0x%x", Mmu);
+    gcmkHEADER_ARG("Mmu=%p", Mmu);
 
     /* Verify the arguments. */
     gcmkVERIFY_ARGUMENT((Address & 0xFFF) == 0);
@@ -474,7 +474,7 @@ gctaMMU_SetPage(
 {
     /* gctBOOL secure; */
 
-    gcmkHEADER_ARG("Mmu=0x%x", Mmu);
+    gcmkHEADER_ARG("Mmu=%p", Mmu);
 
     /* Verify the arguments. */
     gcmkVERIFY_ARGUMENT(PageEntry != gcvNULL);
@@ -497,7 +497,7 @@ gctaMMU_FreePages(
     gceSTATUS status;
     gctUINT32 i;
     gctUINT32_PTR entry;
-    gcmkHEADER_ARG("Mmu=0x%x", Mmu);
+    gcmkHEADER_ARG("Mmu=%p", Mmu);
 
     /* Fill in page table. */
     for (i = 0; i < PageCount; i++)

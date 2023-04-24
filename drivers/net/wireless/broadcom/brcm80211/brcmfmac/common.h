@@ -37,9 +37,8 @@ extern struct brcmf_mp_global_t brcmf_mp_global;
  * @feature_disable: Feature_disable bitmask.
  * @fcmode: FWS flow control.
  * @roamoff: Firmware roaming off?
- * @eap_restrict: Not allow data tx/rx until 802.1X auth succeeds
- * @sdio_wq_highpri: Tasks submitted to SDIO workqueue will run immediately.
  * @ignore_probe_fail: Ignore probe failure.
+ * @trivial_ccode_map: Assume firmware uses ISO3166 country codes with rev 0
  * @country_codes: If available, pointer to struct for translating country codes
  * @bus: Bus specific platform data. Only SDIO at the mmoment.
  */
@@ -49,12 +48,12 @@ struct brcmf_mp_device {
 	int		fcmode;
 	bool		roamoff;
 	bool		iapp;
-	bool		eap_restrict;
-	int		sdio_dpc_prio;
-	bool		sdio_wq_highpri;
 	bool		ignore_probe_fail;
+	bool		trivial_ccode_map;
 	struct brcmfmac_pd_cc *country_codes;
 	const char	*board_type;
+	unsigned char	mac[ETH_ALEN];
+	const char	*antenna_sku;
 	union {
 		struct brcmfmac_sdio_pd sdio;
 	} bus;
@@ -69,6 +68,7 @@ void brcmf_release_module_param(struct brcmf_mp_device *module_param);
 
 /* Sets dongle media info (drv_version, mac address). */
 int brcmf_c_preinit_dcmds(struct brcmf_if *ifp);
+int brcmf_c_set_cur_etheraddr(struct brcmf_if *ifp, const u8 *addr);
 
 #ifdef CONFIG_DMI
 void brcmf_dmi_probe(struct brcmf_mp_device *settings, u32 chip, u32 chiprev);
@@ -76,6 +76,7 @@ void brcmf_dmi_probe(struct brcmf_mp_device *settings, u32 chip, u32 chiprev);
 static inline void
 brcmf_dmi_probe(struct brcmf_mp_device *settings, u32 chip, u32 chiprev) {}
 #endif
+
 u8 brcmf_map_prio_to_prec(void *cfg, u8 prio);
 
 u8 brcmf_map_prio_to_aci(void *cfg, u8 prio);

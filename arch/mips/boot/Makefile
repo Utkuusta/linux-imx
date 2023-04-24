@@ -21,7 +21,7 @@ endif
 drop-sections := .reginfo .mdebug .comment .note .pdr .options .MIPS.options
 strip-flags   := $(addprefix --remove-section=,$(drop-sections))
 
-hostprogs-y := elf2ecoff
+hostprogs := elf2ecoff
 
 suffix-y			:= bin
 suffix-$(CONFIG_KERNEL_BZIP2)	:= bz2
@@ -171,3 +171,6 @@ $(obj)/vmlinux.itb: $(obj)/vmlinux.its $(obj)/vmlinux.bin FORCE
 
 $(obj)/vmlinux.%.itb: $(obj)/vmlinux.%.its $(obj)/vmlinux.bin.% FORCE
 	$(call if_changed,itb-image,$<)
+
+# for cleaning
+subdir- += compressed tools

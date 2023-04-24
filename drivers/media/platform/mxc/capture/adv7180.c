@@ -47,7 +47,7 @@ static int pwn_gpio;
 
 static int adv7180_probe(struct i2c_client *adapter,
 			 const struct i2c_device_id *id);
-static int adv7180_detach(struct i2c_client *client);
+static void adv7180_detach(struct i2c_client *client);
 
 #ifdef CONFIG_OF
 static const struct of_device_id adv7180_of_match[] = {
@@ -855,6 +855,8 @@ static int ioctl_dev_init(struct v4l2_int_device *s)
 /*!
  * This structure defines all the ioctls for this module.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
 static struct v4l2_int_ioctl_desc adv7180_ioctl_desc[] = {
 
 	{vidioc_int_dev_init_num, (v4l2_int_ioctl_func*)ioctl_dev_init},
@@ -908,6 +910,7 @@ static struct v4l2_int_ioctl_desc adv7180_ioctl_desc[] = {
 	{vidioc_int_g_chip_ident_num,
 				(v4l2_int_ioctl_func *)ioctl_g_chip_ident},
 };
+#pragma GCC diagnostic pop
 
 static struct v4l2_int_slave adv7180_slave = {
 	.ioctls = adv7180_ioctl_desc,
@@ -1213,6 +1216,7 @@ static int adv7180_probe(struct i2c_client *client,
 	u32 cvbs = true;
 	struct pinctrl *pinctrl;
 	struct device *dev = &client->dev;
+	int retries = 5;
 
 	printk(KERN_ERR"DBG sensor data is at %p\n", &adv7180_data);
 
@@ -1228,9 +1232,20 @@ static int adv7180_probe(struct i2c_client *client,
 		dev_err(dev, "no sensor pwdn pin available\n");
 		return -ENODEV;
 	}
-	ret = devm_gpio_request_one(dev, pwn_gpio, GPIOF_OUT_INIT_HIGH,
-					"adv7180_pwdn");
-	if (ret < 0) {
+
+	while (retries) {
+		ret = devm_gpio_request_one(dev, pwn_gpio, GPIOF_OUT_INIT_HIGH,
+						"adv7180_pwdn");
+		if (!ret) {
+			break;
+		} else {
+			dev_warn(dev, "no power pin available! re-try...\n");
+			retries--;
+			msleep(1);
+		}
+	}
+
+	if (retries == 0) {
 		dev_err(dev, "no power pin available!\n");
 		return ret;
 	}
@@ -1326,7 +1341,7 @@ static int adv7180_probe(struct i2c_client *client,
  *
  *  @return		Error code indicating success or failure.
  */
-static int adv7180_detach(struct i2c_client *client)
+static void adv7180_detach(struct i2c_client *client)
 {
 	dev_dbg(&adv7180_data.sen.i2c_client->dev,
 		"%s:Removing %s video decoder @ 0x%02X from adapter %s\n",
@@ -1348,8 +1363,6 @@ static int adv7180_detach(struct i2c_client *client)
 		regulator_disable(pvdd_regulator);
 
 	v4l2_int_device_unregister(&adv7180_int_device);
-
-	return 0;
 }
 
 /*!

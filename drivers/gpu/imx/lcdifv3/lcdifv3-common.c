@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * Copyright 2019 NXP
+ * Copyright 2019,2022 NXP
  */
 
 #include <linux/busfreq-imx.h>
@@ -35,13 +35,17 @@ struct lcdifv3_soc {
 	struct clk *clk_pix;
 	struct clk *clk_disp_axi;
 	struct clk *clk_disp_apb;
+
+	u32 thres_low_mul;
+	u32 thres_low_div;
+	u32 thres_high_mul;
+	u32 thres_high_div;
 };
 
 struct lcdifv3_soc_pdata {
 	bool hsync_invert;
 	bool vsync_invert;
 	bool de_invert;
-	bool hdmimix;
 };
 
 struct lcdifv3_platform_reg {
@@ -60,26 +64,18 @@ static struct lcdifv3_soc_pdata imx8mp_lcdif1_pdata = {
 	.hsync_invert = false,
 	.vsync_invert = false,
 	.de_invert    = false,
-	.hdmimix     = false,
 };
 
 static struct lcdifv3_soc_pdata imx8mp_lcdif2_pdata = {
 	.hsync_invert = false,
 	.vsync_invert = false,
 	.de_invert    = true,
-	.hdmimix      = false,
 };
 
-static struct lcdifv3_soc_pdata imx8mp_lcdif3_pdata = {
-	.hsync_invert = false,
-	.vsync_invert = false,
-	.de_invert    = false,
-	.hdmimix     = true,
-};
 static const struct of_device_id imx_lcdifv3_dt_ids[] = {
+	{ .compatible = "fsl,imx93-lcdif", },
 	{ .compatible = "fsl,imx8mp-lcdif1", .data = &imx8mp_lcdif1_pdata, },
 	{ .compatible = "fsl,imx8mp-lcdif2", .data = &imx8mp_lcdif2_pdata, },
-	{ .compatible = "fsl,imx8mp-lcdif3", .data = &imx8mp_lcdif3_pdata,},
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, imx_lcdifv3_dt_ids);
@@ -138,8 +134,10 @@ static void lcdifv3_enable_plane_panic(struct lcdifv3_soc *lcdifv3)
 	 * is 8KB = 512 * 128bit).
 	 * threshold = n * 128bit (n: 0 ~ 511)
 	 */
-	thres_low  = DIV_ROUND_UP(512, 3);
-	thres_high = DIV_ROUND_UP(512 * 2, 3);
+	thres_low  = DIV_ROUND_UP(511 * lcdifv3->thres_low_mul,
+			lcdifv3->thres_low_div);
+	thres_high = DIV_ROUND_UP(511 * lcdifv3->thres_high_mul,
+			lcdifv3->thres_high_div);
 
 	panic_thres = PANIC0_THRES_PANIC_THRES_LOW(thres_low)	|
 		      PANIC0_THRES_PANIC_THRES_HIGH(thres_high);
@@ -258,7 +256,6 @@ EXPORT_SYMBOL(lcdifv3_get_bus_fmt_from_pix_fmt);
 
 int lcdifv3_set_pix_fmt(struct lcdifv3_soc *lcdifv3, u32 format)
 {
-	struct drm_format_name_buf format_name;
 	uint32_t ctrldescl0_5 = 0;
 
 	ctrldescl0_5 = readl(lcdifv3->base + LCDIFV3_CTRLDESCL0_5);
@@ -282,8 +279,8 @@ int lcdifv3_set_pix_fmt(struct lcdifv3_soc *lcdifv3, u32 format)
 		ctrldescl0_5 |= CTRLDESCL0_5_BPP(BPP32_ABGR8888);
 		break;
 	default:
-		dev_err(lcdifv3->dev, "unsupported pixel format: %s\n",
-			drm_get_format_name(format, &format_name));
+		dev_err(lcdifv3->dev, "unsupported pixel format: %p4cc\n",
+			&format);
 		return -EINVAL;
 	}
 
@@ -336,8 +333,7 @@ void lcdifv3_set_fb_addr(struct lcdifv3_soc *lcdifv3, int id, u32 addr)
 }
 EXPORT_SYMBOL(lcdifv3_set_fb_addr);
 
-void lcdifv3_set_fb_hcrop(struct lcdifv3_soc *lcdifv3, u32 src_w,
-			u32 pitch, bool crop)
+void lcdifv3_set_pitch(struct lcdifv3_soc *lcdifv3, unsigned int pitch)
 {
 	uint32_t ctrldescl0_3 = 0;
 
@@ -362,7 +358,7 @@ void lcdifv3_set_fb_hcrop(struct lcdifv3_soc *lcdifv3, u32 src_w,
 
 	writel(ctrldescl0_3, lcdifv3->base + LCDIFV3_CTRLDESCL0_3);
 }
-EXPORT_SYMBOL(lcdifv3_set_fb_hcrop);
+EXPORT_SYMBOL(lcdifv3_set_pitch);
 
 
 void lcdifv3_set_mode(struct lcdifv3_soc *lcdifv3, struct videomode *vmode)
@@ -448,9 +444,9 @@ void lcdifv3_set_mode(struct lcdifv3_soc *lcdifv3, struct videomode *vmode)
 	}
 
 	if (vmode->flags & DISPLAY_FLAGS_PIXDATA_NEGEDGE)
-		writel(CTRL_INV_PXCK, lcdifv3->base + LCDIFV3_CTRL_CLR);
-	else
 		writel(CTRL_INV_PXCK, lcdifv3->base + LCDIFV3_CTRL_SET);
+	else
+		writel(CTRL_INV_PXCK, lcdifv3->base + LCDIFV3_CTRL_CLR);
 }
 EXPORT_SYMBOL(lcdifv3_set_mode);
 
@@ -505,39 +501,15 @@ void lcdifv3_disable_controller(struct lcdifv3_soc *lcdifv3)
 }
 EXPORT_SYMBOL(lcdifv3_disable_controller);
 
-static int hdmimix_lcdif3_setup(struct lcdifv3_soc *lcdifv3)
+long lcdifv3_pix_clk_round_rate(struct lcdifv3_soc *lcdifv3,
+				unsigned long rate)
 {
-	struct device *dev = lcdifv3->dev;
-	int ret;
+	if (unlikely(!rate))
+		return -EINVAL;
 
-	struct clk_bulk_data clocks[] = {
-		{ .id = "mix_apb" },
-		{ .id = "mix_axi" },
-		{ .id = "xtl_24m" },
-		{ .id = "mix_pix" },
-		{ .id = "lcdif_apb" },
-		{ .id = "lcdif_axi" },
-		{ .id = "lcdif_pdi" },
-		{ .id = "lcdif_pix" },
-		{ .id = "lcdif_spu" },
-		{ .id = "noc_hdmi"  },
-	};
-
-	/* power up hdmimix lcdif and nor */
-	ret = device_reset(dev);
-	if (ret == -EPROBE_DEFER)
-		return ret;
-
-	/* enable lpcg of hdmimix lcdif and nor */
-	ret = devm_clk_bulk_get(dev, ARRAY_SIZE(clocks), clocks);
-	if (ret < 0)
-		return ret;
-	ret = clk_bulk_prepare_enable(ARRAY_SIZE(clocks), clocks);
-	if (ret < 0)
-		return ret;
-
-	return 0;
+	return clk_round_rate(lcdifv3->clk_pix, rate);
 }
+EXPORT_SYMBOL(lcdifv3_pix_clk_round_rate);
 
 static int platform_remove_device_fn(struct device *dev, void *data)
 {
@@ -614,6 +586,52 @@ err_register:
 	return ret;
 }
 
+static int imx_lcdifv3_check_thres_value(u32 mul, u32 div)
+{
+	if (!div)
+		return -EINVAL;
+
+	if (mul > div)
+		return -EINVAL;
+
+	return 0;
+}
+
+static void imx_lcdifv3_of_parse_thres(struct lcdifv3_soc *lcdifv3)
+{
+	int ret;
+	u32 thres_low[2], thres_high[2];
+	struct device_node *np = lcdifv3->dev->of_node;
+
+	/* default 'thres-low' value:  FIFO * 1/3;
+	 * default 'thres-high' value: FIFO * 2/3.
+	 */
+	lcdifv3->thres_low_mul	= 1;
+	lcdifv3->thres_low_div	= 3;
+	lcdifv3->thres_high_mul	= 2;
+	lcdifv3->thres_high_div	= 3;
+
+	ret = of_property_read_u32_array(np, "thres-low", thres_low, 2);
+	if (!ret) {
+		/* check the value effectiveness */
+		ret = imx_lcdifv3_check_thres_value(thres_low[0], thres_low[1]);
+		if (!ret) {
+			lcdifv3->thres_low_mul	= thres_low[0];
+			lcdifv3->thres_low_div	= thres_low[1];
+		}
+	}
+
+	ret = of_property_read_u32_array(np, "thres-high", thres_high, 2);
+	if (!ret) {
+		/* check the value effectiveness */
+		ret = imx_lcdifv3_check_thres_value(thres_high[0], thres_high[1]);
+		if (!ret) {
+			lcdifv3->thres_high_mul	= thres_high[0];
+			lcdifv3->thres_high_div	= thres_high[1];
+		}
+	}
+}
+
 static int imx_lcdifv3_probe(struct platform_device *pdev)
 {
 	int ret;
@@ -621,19 +639,8 @@ static int imx_lcdifv3_probe(struct platform_device *pdev)
 	struct device_node *np = dev->of_node;
 	struct lcdifv3_soc *lcdifv3;
 	struct resource *res;
-	struct regmap *blk_ctl;
-	const struct of_device_id *of_id;
-	const struct lcdifv3_soc_pdata *soc_pdata;
 
 	dev_dbg(dev, "%s: probe begin\n", __func__);
-
-	of_id = of_match_device(imx_lcdifv3_dt_ids, dev);
-	if (!of_id) {
-		dev_err(&pdev->dev, "OF data missing\n");
-		return -EINVAL;
-	}
-
-	soc_pdata = of_id->data;
 
 	lcdifv3 = devm_kzalloc(dev, sizeof(*lcdifv3), GFP_KERNEL);
 	if (!lcdifv3) {
@@ -647,14 +654,15 @@ static int imx_lcdifv3_probe(struct platform_device *pdev)
 
 	lcdifv3->irq = platform_get_irq(pdev, 0);
 	if (lcdifv3->irq < 0) {
-		dev_err(dev, "No irq get\n");
-		return -EPROBE_DEFER;
+		dev_err(dev, "No irq get, ret=%d\n", lcdifv3->irq);
+		return lcdifv3->irq;
 	}
 
 	lcdifv3->clk_pix = devm_clk_get(dev, "pix");
 	if (IS_ERR(lcdifv3->clk_pix)) {
-		dev_err(dev, "No pix clock get\n");
-		return -EPROBE_DEFER;
+		ret = PTR_ERR(lcdifv3->clk_pix);
+		dev_err(dev, "No pix clock get: %d\n", ret);
+		return ret;
 	}
 
 	lcdifv3->clk_disp_axi = devm_clk_get(dev, "disp-axi");
@@ -669,35 +677,20 @@ static int imx_lcdifv3_probe(struct platform_device *pdev)
 	if (IS_ERR(lcdifv3->base))
 		return PTR_ERR(lcdifv3->base);
 
-	lcdifv3->dev = dev;
-
-	/* reset controller to avoid any conflict
-	 * with uboot splash screen settings.
-	 */
-	blk_ctl = syscon_regmap_lookup_by_phandle(np, "blk-ctl");
-	if (IS_ERR(blk_ctl))
-		blk_ctl = NULL;
-
-	if (blk_ctl) {
-		clk_prepare_enable(lcdifv3->clk_disp_apb);
-		writel(CTRL_SW_RESET, lcdifv3->base + LCDIFV3_CTRL_CLR);
-
-		/* reset LCDIFv3 controller */
-		regmap_update_bits(blk_ctl, 0x0, BIT(5), 0x0);
-		regmap_update_bits(blk_ctl, 0x0, BIT(5), BIT(5));
-
-		clk_disable_unprepare(lcdifv3->clk_disp_apb);
-	}
-
-	platform_set_drvdata(pdev, lcdifv3);
-
-	if (soc_pdata->hdmimix) {
-		ret = hdmimix_lcdif3_setup(lcdifv3);
-		if (ret < 0) {
-			dev_err(dev, "hdmimix lcdif3 setup failed\n");
+	if (of_device_is_compatible(np, "fsl,imx93-lcdif")) {
+		lcdifv3->gpr = syscon_regmap_lookup_by_phandle(np, "fsl,gpr");
+		if (IS_ERR(lcdifv3->gpr)) {
+			ret = PTR_ERR(lcdifv3->gpr);
+			dev_err(dev, "failed to get gpr: %d\n", ret);
 			return ret;
 		}
 	}
+
+	lcdifv3->dev = dev;
+
+	imx_lcdifv3_of_parse_thres(lcdifv3);
+
+	platform_set_drvdata(pdev, lcdifv3);
 
 	atomic_set(&lcdifv3->rpm_suspended, 0);
 	pm_runtime_enable(dev);
@@ -727,6 +720,10 @@ static int imx_lcdifv3_runtime_suspend(struct device *dev)
 
 	release_bus_freq(BUS_FREQ_HIGH);
 
+	/* clear LCDIF QoS and cache */
+	if (of_device_is_compatible(dev->of_node, "fsl,imx93-lcdif"))
+		regmap_write(lcdifv3->gpr, 0xc, 0x0);
+
 	return 0;
 }
 
@@ -742,6 +739,10 @@ static int imx_lcdifv3_runtime_resume(struct device *dev)
 
 	if (!atomic_dec_and_test(&lcdifv3->rpm_suspended))
 		return 0;
+
+	/* set LCDIF QoS and cache */
+	if (of_device_is_compatible(dev->of_node, "fsl,imx93-lcdif"))
+		regmap_write(lcdifv3->gpr, 0xc, 0x3712);
 
 	request_bus_freq(BUS_FREQ_HIGH);
 

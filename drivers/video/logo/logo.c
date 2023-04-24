@@ -57,10 +57,6 @@ const struct linux_logo * __ref fb_find_logo(int depth)
 		/* SuperH Linux logo */
 		logo = &logo_superh_mono;
 #endif
-#ifdef CONFIG_LOGO_CUSTOM_CLUT224
-		/* Custom inventron logo */
-		logo = &logo_custom_clut224;
-#endif
 	}
 	
 	if (depth >= 4) {

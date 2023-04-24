@@ -28,6 +28,7 @@ extern const char raid6_empty_zero_page[PAGE_SIZE];
 #include <errno.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -42,6 +43,9 @@ typedef uint64_t u64;
 
 #ifndef PAGE_SIZE
 # define PAGE_SIZE 4096
+#endif
+#ifndef PAGE_SHIFT
+# define PAGE_SHIFT 12
 #endif
 extern const char raid6_empty_zero_page[PAGE_SIZE];
 
@@ -77,7 +81,7 @@ struct raid6_calls {
 	void (*xor_syndrome)(int, int, int, size_t, void **);
 	int  (*valid)(void);	/* Returns 1 if this routine set is usable */
 	const char *name;	/* Name of this routine set */
-	int prefer;		/* Has special performance attribute */
+	int priority;		/* Relative priority ranking if non-zero */
 };
 
 /* Selected algorithm */

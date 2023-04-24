@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2018 NXP.
+ * Copyright 2018-2020 NXP.
  */
 
+#include <dt-bindings/firmware/imx/rsrc.h>
 #include <linux/device_cooling.h>
 #include <linux/err.h>
 #include <linux/firmware/imx/sci.h>
@@ -14,9 +15,9 @@
 #include <linux/thermal.h>
 
 #include "thermal_core.h"
+#include "thermal_hwmon.h"
 
 #define IMX_SC_MISC_FUNC_GET_TEMP	13
-#define IMX_SC_C_TEMP			0
 #define IMX_SC_TEMP_PASSIVE_COOL_DELTA	10000
 
 static struct imx_sc_ipc *thermal_ipc_handle;
@@ -58,11 +59,11 @@ struct imx_sc_msg_misc_get_temp {
 	} data;
 } __packed __aligned(4);
 
-static int imx_sc_thermal_get_temp(void *data, int *temp)
+static int imx_sc_thermal_get_temp(struct thermal_zone_device *tz, int *temp)
 {
 	struct imx_sc_msg_misc_get_temp msg;
 	struct imx_sc_rpc_msg *hdr = &msg.hdr;
-	struct imx_sc_sensor *sensor = data;
+	struct imx_sc_sensor *sensor = tz->devdata;
 	int ret;
 
 	msg.data.req.resource_id = sensor->resource_id;
@@ -79,8 +80,7 @@ static int imx_sc_thermal_get_temp(void *data, int *temp)
 		 * if the SS power domain is down, read temp will fail, so
 		 * we can print error once and return 0 directly.
 		 */
-		pr_err_once("read temp sensor %d failed, could be SS NOT powered up,\
-			     return 0 for this thermal zone, ret %d\n",
+		pr_err_once("read temp sensor %d failed, could be SS powered off, ret %d\n",
 			     sensor->resource_id, ret);
 		*temp = 0;
 		return 0;
@@ -91,10 +91,11 @@ static int imx_sc_thermal_get_temp(void *data, int *temp)
 	return 0;
 }
 
-static int imx_sc_thermal_get_trend(void *p, int trip, enum thermal_trend *trend)
+static int imx_sc_thermal_get_trend(struct thermal_zone_device *tz, int trip,
+				    enum thermal_trend *trend)
 {
 	int trip_temp;
-	struct imx_sc_sensor *sensor = p;
+	struct imx_sc_sensor *sensor = tz->devdata;
 
 	if (!sensor->tzd)
 		return 0;
@@ -104,16 +105,17 @@ static int imx_sc_thermal_get_trend(void *p, int trip, enum thermal_trend *trend
 
 	if (sensor->tzd->temperature >=
 		(trip_temp - IMX_SC_TEMP_PASSIVE_COOL_DELTA))
-		*trend = THERMAL_TREND_RAISE_FULL;
+		*trend = THERMAL_TREND_RAISING;
 	else
-		*trend = THERMAL_TREND_DROP_FULL;
+		*trend = THERMAL_TREND_DROPPING;
 
 	return 0;
 }
 
-static int imx_sc_thermal_set_trip_temp(void *p, int trip, int temp)
+static int imx_sc_thermal_set_trip_temp(struct thermal_zone_device *tz, int trip,
+					int temp)
 {
-	struct imx_sc_sensor *sensor = p;
+	struct imx_sc_sensor *sensor = tz->devdata;
 
 	if (trip == IMX_TRIP_CRITICAL)
 		sensor->temp_critical = temp;
@@ -124,108 +126,62 @@ static int imx_sc_thermal_set_trip_temp(void *p, int trip, int temp)
 	return 0;
 }
 
-static const struct thermal_zone_of_device_ops imx_sc_thermal_ops = {
+static const struct thermal_zone_device_ops imx_sc_thermal_ops = {
 	.get_temp = imx_sc_thermal_get_temp,
 	.get_trend = imx_sc_thermal_get_trend,
 	.set_trip_temp = imx_sc_thermal_set_trip_temp,
 };
 
-static int imx_sc_thermal_register_sensor(struct platform_device *pdev,
-					  struct imx_sc_sensor *sensor)
-{
-	struct thermal_zone_device *tzd;
-
-	tzd = devm_thermal_zone_of_sensor_register(&pdev->dev,
-						   sensor->resource_id,
-						   sensor,
-						   &imx_sc_thermal_ops);
-	if (IS_ERR(tzd)) {
-		dev_err(&pdev->dev, "failed to register sensor: %d\n",
-			sensor->resource_id);
-		return PTR_ERR(tzd);
-	}
-
-	sensor->tzd = tzd;
-
-	return 0;
-}
-
-static int imx_sc_thermal_get_sensor_id(struct device_node *sensor_np, u32 *id)
-{
-	struct of_phandle_args sensor_specs;
-	int ret;
-
-	ret = of_parse_phandle_with_args(sensor_np, "thermal-sensors",
-			"#thermal-sensor-cells",
-			0, &sensor_specs);
-	if (ret)
-		return ret;
-
-	if (sensor_specs.args_count >= 1) {
-		*id = sensor_specs.args[0];
-		WARN(sensor_specs.args_count > 1,
-				"%pOFn: too many cells in sensor specifier %d\n",
-				sensor_specs.np, sensor_specs.args_count);
-	} else {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int imx_sc_thermal_probe(struct platform_device *pdev)
 {
-	struct device_node *np = pdev->dev.of_node;
-	struct device_node *sensor_np = NULL;
-	struct imx_sc_thermal_data *data;
-	struct imx_sc_sensor *sensors;
+	struct imx_sc_sensor *sensor;
 	const struct thermal_trip *trip;
-	u32 sensor_num;
-	int ret, i;
+	const int *resource_id;
+	int i, ret;
 
 	ret = imx_scu_get_handle(&thermal_ipc_handle);
 	if (ret)
 		return ret;
 
-	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
-	if (!data)
-		return -ENOMEM;
-
-	ret = of_property_read_u32(np, "tsens-num", &sensor_num);
-	if (ret || !sensor_num) {
-		dev_err(&pdev->dev, "failed to get valid temp sensor number!\n");
+	resource_id = of_device_get_match_data(&pdev->dev);
+	if (!resource_id)
 		return -EINVAL;
-	}
 
-	sensors = devm_kzalloc(&pdev->dev, sizeof(*data->sensor) * sensor_num,
-			       GFP_KERNEL);
-	if (!sensors)
-		return -ENOMEM;
+	for (i = 0; resource_id[i] >= 0; i++) {
 
-	data->sensor = sensors;
+		sensor = devm_kzalloc(&pdev->dev, sizeof(*sensor), GFP_KERNEL);
+		if (!sensor)
+			return -ENOMEM;
 
-	np = of_find_node_by_name(NULL, "thermal-zones");
-	if (!np)
-		return -ENODEV;
+		sensor->resource_id = resource_id[i];
 
-	for (i = 0; i < sensor_num; i++) {
-		struct imx_sc_sensor *sensor = &data->sensor[i];
+		sensor->tzd = devm_thermal_of_zone_register(&pdev->dev, sensor->resource_id,
+							    sensor, &imx_sc_thermal_ops);
+		if (IS_ERR(sensor->tzd)) {
+			/*
+			 * Save the error value before freeing the
+			 * sensor pointer, otherwise we endup with a
+			 * use-after-free error
+			 */
+			ret = PTR_ERR(sensor->tzd);
 
-		sensor_np = of_get_next_child(np, sensor_np);
-		ret = imx_sc_thermal_get_sensor_id(sensor_np, &sensor->resource_id);
-		if (ret < 0) {
-			dev_err(&pdev->dev,
-				"failed to get valid sensor resource id: %d\n",
-				ret);
-			break;
+			devm_kfree(&pdev->dev, sensor);
+
+			/*
+			 * The thermal framework notifies us there is
+			 * no thermal zone description for such a
+			 * sensor id
+			 */
+			if (ret == -ENODEV)
+				continue;
+
+			dev_err(&pdev->dev, "failed to register thermal zone\n");
+			return ret;
 		}
 
-		ret = imx_sc_thermal_register_sensor(pdev, sensor);
-		if (ret) {
-			dev_err(&pdev->dev, "failed to register thermal sensor: %d\n",
-				ret);
-			break;
-		}
+		if (devm_thermal_add_hwmon_sysfs(sensor->tzd))
+			dev_warn(&pdev->dev, "failed to add hwmon sysfs attributes\n");
+
 		trip = of_thermal_get_trip_points(sensor->tzd);
 		sensor->temp_passive = trip[0].temperature;
 		sensor->temp_critical = trip[1].temperature;
@@ -253,21 +209,29 @@ static int imx_sc_thermal_probe(struct platform_device *pdev)
 		}
 	}
 
-	of_node_put(np);
-	of_node_put(sensor_np);
-
-	return ret;
+	return 0;
 }
 
+static int imx_sc_thermal_remove(struct platform_device *pdev)
+{
+	return 0;
+}
+
+static const int imx_sc_sensors[] = {
+	IMX_SC_R_SYSTEM, IMX_SC_R_PMIC_0,
+	IMX_SC_R_AP_0, IMX_SC_R_AP_1,
+	IMX_SC_R_GPU_0_PID0, IMX_SC_R_GPU_1_PID0,
+	IMX_SC_R_DRC_0, -1 };
+
 static const struct of_device_id imx_sc_thermal_table[] = {
-	{ .compatible = "fsl,imx8qxp-sc-thermal", },
-	{ .compatible = "fsl,imx8qm-sc-thermal", },
+	{ .compatible = "fsl,imx-sc-thermal", .data =  imx_sc_sensors },
 	{}
 };
 MODULE_DEVICE_TABLE(of, imx_sc_thermal_table);
 
 static struct platform_driver imx_sc_thermal_driver = {
 		.probe = imx_sc_thermal_probe,
+		.remove	= imx_sc_thermal_remove,
 		.driver = {
 			.name = "imx-sc-thermal",
 			.of_match_table = imx_sc_thermal_table,

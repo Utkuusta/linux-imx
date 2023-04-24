@@ -5,7 +5,9 @@
 
 #include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
+#include <drm/drm_module.h>
 #include <linux/component.h>
 #include <drm/drm_of.h>
 
@@ -33,12 +35,19 @@ struct drm_device *dcss_drv_dev_to_drm(struct device *dev)
 	return mdrv ? &mdrv->kms->base : NULL;
 }
 
+bool dcss_drv_is_componentized(struct device *dev)
+{
+	struct dcss_drv *mdrv = dev_get_drvdata(dev);
+
+	return mdrv->is_componentized;
+}
+
 static int dcss_drv_init(struct device *dev, bool componentized)
 {
 	struct dcss_drv *mdrv;
 	int err = 0;
 
-	mdrv = devm_kzalloc(dev, sizeof(*mdrv), GFP_KERNEL);
+	mdrv = kzalloc(sizeof(*mdrv), GFP_KERNEL);
 	if (!mdrv)
 		return -ENOMEM;
 
@@ -66,7 +75,7 @@ dcss_shutoff:
 	dev_set_drvdata(dev, NULL);
 
 err:
-	devm_kfree(dev, mdrv);
+	kfree(mdrv);
 	return err;
 }
 
@@ -81,6 +90,8 @@ static void dcss_drv_deinit(struct device *dev, bool componentized)
 	dcss_dev_destroy(mdrv->dcss);
 
 	dev_set_drvdata(dev, NULL);
+
+	kfree(mdrv);
 }
 
 static int dcss_drv_bind(struct device *dev)
@@ -179,7 +190,7 @@ static struct platform_driver dcss_platform_driver = {
 	},
 };
 
-module_platform_driver(dcss_platform_driver);
+drm_module_platform_driver(dcss_platform_driver);
 
 MODULE_AUTHOR("Laurentiu Palcu <laurentiu.palcu@nxp.com>");
 MODULE_DESCRIPTION("DCSS driver for i.MX8MQ");

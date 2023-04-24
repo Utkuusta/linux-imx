@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * ci.h - common structures, functions, and macros of the ChipIdea driver
  *
@@ -17,7 +17,6 @@
 #include <linux/usb/otg-fsm.h>
 #include <linux/usb/otg.h>
 #include <linux/usb/role.h>
-#include <linux/usb/chipidea.h>
 #include <linux/ulpi/interface.h>
 
 /******************************************************************************
@@ -50,6 +49,7 @@ enum ci_hw_regs {
 	OP_USBCMD,
 	OP_USBSTS,
 	OP_USBINTR,
+	OP_FRINDEX,
 	OP_DEVICEADDR,
 	OP_ENDPTLISTADDR,
 	OP_TTCTRL,
@@ -127,17 +127,17 @@ enum ci_revision {
  * struct ci_role_driver - host/gadget role driver
  * @start: start this role
  * @stop: stop this role
- * @irq: irq handler for this role
  * @suspend: system suspend handler for this role
  * @resume: system resume handler for this role
+ * @irq: irq handler for this role
  * @name: role name string (host/gadget)
  */
 struct ci_role_driver {
 	int		(*start)(struct ci_hdrc *);
 	void		(*stop)(struct ci_hdrc *);
-	irqreturn_t	(*irq)(struct ci_hdrc *);
 	void		(*suspend)(struct ci_hdrc *);
 	void		(*resume)(struct ci_hdrc *, bool power_lost);
+	irqreturn_t	(*irq)(struct ci_hdrc *);
 	const char	*name;
 };
 
@@ -200,7 +200,6 @@ struct hw_bank {
  * @phy: pointer to PHY, if any
  * @usb_phy: pointer to USB PHY, if any and if using the USB PHY framework
  * @hcd: pointer to usb_hcd for ehci host driver
- * @debugfs: root dentry for this controller in debugfs
  * @id_event: indicates there is an id event, and handled at ci_otg_work
  * @b_sess_valid_event: indicates there is a vbus event, and handled
  * at ci_otg_work
@@ -209,9 +208,9 @@ struct hw_bank {
  * @in_lpm: if the core in low power mode
  * @wakeup_int: if wakeup interrupt occur
  * @rev: The revision number for controller
- * @mutex: protect code from concorrent running
  * @power_lost_work: work item when controller power is lost
  * @power_lost_wq: work queue for controller power is lost
+ * @mutex: protect code from concorrent running
  */
 struct ci_hdrc {
 	struct device			*dev;
@@ -257,7 +256,6 @@ struct ci_hdrc {
 	/* old usb_phy interface */
 	struct usb_phy			*usb_phy;
 	struct usb_hcd			*hcd;
-	struct dentry			*debugfs;
 	bool				id_event;
 	bool				b_sess_valid_event;
 	bool				imx28_write_fix;
@@ -265,6 +263,8 @@ struct ci_hdrc {
 	bool				in_lpm;
 	bool				wakeup_int;
 	enum ci_revision		rev;
+	struct work_struct		power_lost_work;
+	struct workqueue_struct		*power_lost_wq;
 	/* register save area for suspend&resume */
 	u32				pm_command;
 	u32				pm_status;
@@ -276,8 +276,6 @@ struct ci_hdrc {
 	u32				pm_configured_flag;
 	u32				pm_portsc;
 	u32				pm_usbmode;
-	struct work_struct		power_lost_work;
-	struct workqueue_struct		*power_lost_wq;
 	struct mutex			mutex;
 };
 
@@ -501,7 +499,6 @@ u8 hw_port_test_get(struct ci_hdrc *ci);
 void hw_phymode_configure(struct ci_hdrc *ci);
 
 void ci_platform_configure(struct ci_hdrc *ci);
-int hw_controller_reset(struct ci_hdrc *ci);
 
 void dbg_create_files(struct ci_hdrc *ci);
 
