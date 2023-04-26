@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2019 NXP
+ */
+ 
+/*
+ * DTS for V1R0 SOM and V1R0 Carrier Board.
+ */
+ 
+/dts-v1/;
+
+#include "imx8mm-invsom-v1r1.dts"
+
+&iomuxc {
+	/delete-node/ pinctrl_hog_1; // delete MX8MM_IOMUXC_GPIO1_IO15_GPIO1_IO15 to use ccm2
+
+	pinctrl_hog_1: hoggrp-1 {
+		fsl,pins = <
+			MX8MM_IOMUXC_GPIO1_IO12_GPIO1_IO12	   0x184
+			MX8MM_IOMUXC_SAI2_RXFS_GPIO4_IO21	   0x00000016
+		>;
+	};
+	
+	pinctrl_ccm2: ccm2grp {
+		fsl,pins = <
+			MX8MM_IOMUXC_GPIO1_IO15_CCMSRCGPCMIX_CLKO2	0x1c4
+		>;
+	};	
+};

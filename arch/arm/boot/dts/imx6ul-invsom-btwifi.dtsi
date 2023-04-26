@@ -1,0 +1,71 @@
+/*
+ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+ * Copyright 2019 NXP
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/*
+ * NOTE: This DTS file is written for plugging in Murata Wi-Fi/BT EVK into Slot
+ * SD1 and using Murata i.MX InterConnect Ver 2.0 Adapter. Bluetooth UART &
+ * control signals are connected via ribbon cable (J1701 connector).
+ */
+
+/ {
+
+	/*modem_reset: modem-reset {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_wifi>;	
+		compatible = "gpio-reset";
+		reset-gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <1>;
+		#reset-cells = <0>;
+	};*/
+
+	reg_sd1_vmmc: sd1_regulator {
+		status = "disabled";
+	};
+		
+	usdhc1_pwrseq: usdhc1_pwrseq {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_wifi>;
+		compatible = "mmc-pwrseq-emmc";
+		reset-gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&iomuxc {
+	pinctrl_wifi: wifigrp {
+		fsl,pins = <
+			MX6UL_PAD_GPIO1_IO04__GPIO1_IO04			0x000010B0 /* output: wifi modul 1:acik */
+		>;
+	};
+};
+
+&uart1 { /* bluetooth */
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1>;
+	/* uart-has-rtscts;
+	 fsl,dte-mode; 
+	resets = <&modem_reset>; */
+	status = "okay";
+};
+
+&usdhc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/delete-property/ vmmc-supply;
+	no-1-8-v;
+	non-removable;
+	pm-ignore-notify;
+	/*mmc-pwrseq = <&usdhc1_pwrseq>;*/
+	/* cap-power-off-card; */
+	wifi-host;
+	brcmf: bcrmf@1 {
+		reg = <1>;
+		compatible = "brcm,bcm4329-fmac";
+	};
+};
+

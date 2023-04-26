@@ -11,6 +11,7 @@ obj-$(CONFIG_SND_SOC_P1022_DS) += snd-soc-p1022-ds.o
 snd-soc-p1022-rdk-objs := p1022_rdk.o
 obj-$(CONFIG_SND_SOC_P1022_RDK) += snd-soc-p1022-rdk.o
 
+EXTRA_CFLAGS		+= -DDEBUG
 # Freescale SSI/DMA/SAI/SPDIF Support
 snd-soc-fsl-audmix-objs := fsl_audmix.o
 snd-soc-fsl-asoc-card-objs := fsl-asoc-card.o

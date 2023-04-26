@@ -26,7 +26,16 @@
 #include <sound/soc-dapm.h>
 #include <sound/initval.h>
 
+#include <linux/gpio/consumer.h>
 #include "sgtl5000.h"
+
+//ERHANY
+#include <linux/regmap.h>
+#include <linux/mfd/syscon.h>
+#include <linux/mfd/syscon/imx6q-iomuxc-gpr.h>
+#include <linux/clk.h>
+#include <linux/clk-provider.h>
+#define DEBUG
 
 #define SGTL5000_DAP_REG_OFFSET	0x0100
 #define SGTL5000_MAX_REG_OFFSET	0x013A
@@ -152,6 +161,9 @@ struct sgtl5000_priv {
 	u8 lrclk_strength;
 	u8 sclk_strength;
 	u16 mute_state[LAST_POWER_EVENT + 1];
+
+	struct gpio_desc *amp_en_pin;
+	struct gpio_desc *mic_en_pin;
 };
 
 static inline int hp_sel_input(struct snd_soc_component *component)
@@ -1602,6 +1614,56 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 		dev_err(&client->dev, "Failed to allocate regmap: %d\n", ret);
 		goto disable_regs;
 	}
+	//ERHANY
+#if CONFIG_SOC_INVSOM6UL
+	{
+		struct regmap *gpr;
+			gpr = syscon_regmap_lookup_by_compatible("fsl,imx6ul-iomuxc-gpr");
+			if (IS_ERR(gpr)) {
+				dev_err(&client->dev, "cannot find iomuxc registers\n");
+				return PTR_ERR(gpr);
+			}
+
+			regmap_update_bits(gpr, IOMUXC_GPR1, MCLK_DIR(2),
+					   MCLK_DIR(2));
+			dev_err(&client->dev, "mclk2 direction set\n");
+	}
+#endif
+	/*{
+		struct clk *busclk = devm_clk_get(&client->dev, "bus0");
+		if (IS_ERR(busclk)) {
+			ret = PTR_ERR(busclk);
+			dev_err(&client->dev, "Failed to get busclk: %d\n", ret);
+		} else {
+			ret = clk_prepare_enable(busclk);
+			if (ret) {
+				dev_err(&client->dev, "Error enabling busclk %d\n", ret);
+			}
+		}
+
+		busclk = devm_clk_get(&client->dev, "bus1");
+		if (IS_ERR(busclk)) {
+			ret = PTR_ERR(busclk);
+			dev_err(&client->dev, "Failed to get busclk1: %d\n", ret);
+		} else {
+			ret = clk_prepare_enable(busclk);
+			if (ret) {
+				dev_err(&client->dev, "Error enabling busclk1 %d\n", ret);
+			}
+		}
+
+		busclk = devm_clk_get(&client->dev, "bus2");
+		if (IS_ERR(busclk)) {
+			ret = PTR_ERR(busclk);
+			dev_err(&client->dev, "Failed to get busclk2: %d\n", ret);
+		} else {
+			ret = clk_prepare_enable(busclk);
+			if (ret) {
+				dev_err(&client->dev, "Error enabling busclk2 %d\n", ret);
+			}
+		}
+	}*/
+	dev_err(&client->dev, "before sgtl5000->mclk\n");
 
 	sgtl5000->mclk = devm_clk_get(&client->dev, NULL);
 	if (IS_ERR(sgtl5000->mclk)) {
@@ -1614,15 +1676,18 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 
 		goto disable_regs;
 	}
-
+	dev_err(&client->dev, "before clk_prepare_enable\n");
 	ret = clk_prepare_enable(sgtl5000->mclk);
 	if (ret) {
 		dev_err(&client->dev, "Error enabling clock %d\n", ret);
 		goto disable_regs;
+	}else {
+		dev_err(&client->dev, "mclock ready %d\n", ret);
 	}
 
 	/* Need 8 clocks before I2C accesses */
-	udelay(1);
+	udelay(10);
+	dev_err(&client->dev, "before regmap_read-sgtl5000\n");
 
 	/* read chip information */
 	ret = regmap_read(sgtl5000->regmap, SGTL5000_CHIP_ID, &reg);
@@ -1630,7 +1695,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 		dev_err(&client->dev, "Error reading chip id %d\n", ret);
 		goto disable_clk;
 	}
-
+	dev_err(&client->dev, "before GTL5000_PARTID_MASK\n");
 	if (((reg & SGTL5000_PARTID_MASK) >> SGTL5000_PARTID_SHIFT) !=
 	    SGTL5000_PARTID_PART_ID) {
 		dev_err(&client->dev,
@@ -1642,7 +1707,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 	rev = (reg & SGTL5000_REVID_MASK) >> SGTL5000_REVID_SHIFT;
 	dev_info(&client->dev, "sgtl5000 revision 0x%x\n", rev);
 	sgtl5000->revision = rev;
-
+	dev_err(&client->dev, "before SGTL5000_CHIP_CLK_CTRL\n");
 	/* reconfigure the clocks in case we're using the PLL */
 	ret = regmap_write(sgtl5000->regmap,
 			   SGTL5000_CHIP_CLK_CTRL,
@@ -1650,7 +1715,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 	if (ret)
 		dev_err(&client->dev,
 			"Error %d initializing CHIP_CLK_CTRL\n", ret);
-
+	dev_err(&client->dev, "before SGTL5000_CHIP_ANA_CTRL\n");
 	/* Mute everything to avoid pop from the following power-up */
 	ret = regmap_write(sgtl5000->regmap, SGTL5000_CHIP_ANA_CTRL,
 			   SGTL5000_CHIP_ANA_CTRL_DEFAULT);
@@ -1660,6 +1725,35 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 		goto disable_clk;
 	}
 
+	dev_err(&client->dev, "before sgtl5000->amp_en_pin\n");
+	sgtl5000->amp_en_pin = devm_gpiod_get(&client->dev, "amp-en", GPIOD_OUT_HIGH);
+	if (IS_ERR(sgtl5000->amp_en_pin)) {
+		ret = PTR_ERR(sgtl5000->amp_en_pin);
+		dev_err(&client->dev, "failed to request GPIO amp-en: %d\n", ret);
+	} else {
+		ret = gpiod_export(sgtl5000->amp_en_pin, 0);//no direction setting
+		if( ret == 0 )
+			gpiod_export_link(&client->dev, "amp-en", sgtl5000->amp_en_pin);
+
+		dev_err(&client->dev, "amp_en_pin setting low..\n");
+		gpiod_direction_output(sgtl5000->amp_en_pin, 0);
+	}
+
+#if !CONFIG_SOC_INVSOM6UL
+	dev_err(&client->dev, "before sgtl5000->mic_en_pin\n");
+	sgtl5000->mic_en_pin = devm_gpiod_get(&client->dev, "mic-en", GPIOD_OUT_HIGH);
+	if (IS_ERR(sgtl5000->mic_en_pin)) {
+		ret = PTR_ERR(sgtl5000->mic_en_pin);
+		dev_err(&client->dev, "failed to request GPIO mic-en: %d\n", ret);
+	} else {
+		ret = gpiod_export(sgtl5000->mic_en_pin, 0);//no direction setting
+		if( ret == 0 )
+			gpiod_export_link(&client->dev, "mic-en", sgtl5000->mic_en_pin);
+
+		dev_err(&client->dev, "mic_en_pin setting high..\n");
+		gpiod_direction_output(sgtl5000->mic_en_pin, 1);
+	}
+#endif
 	/*
 	 * If VAG is powered-on (e.g. from previous boot), it would be disabled
 	 * by the write to ANA_POWER in later steps of the probe code. This
@@ -1668,11 +1762,13 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 	 * cool-down time.
 	 */
 	ret = regmap_read(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, &value);
+	dev_err(&client->dev, "ana power : %d\n", value);
 	if (ret) {
 		dev_err(&client->dev, "Failed to read ANA_POWER: %d\n", ret);
 		goto disable_clk;
 	}
 	if (value & SGTL5000_VAG_POWERUP) {
+		dev_err(&client->dev, "value & SGTL5000_VAG_POWERUP\n");
 		ret = regmap_update_bits(sgtl5000->regmap,
 					 SGTL5000_CHIP_ANA_POWER,
 					 SGTL5000_VAG_POWERUP,
@@ -1687,6 +1783,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 
 	/* Follow section 2.2.1.1 of AN3663 */
 	ana_pwr = SGTL5000_ANA_POWER_DEFAULT;
+	dev_err(&client->dev, "num_supplies : %d\n", sgtl5000->num_supplies);
 	if (sgtl5000->num_supplies <= VDDD) {
 		/* internal VDDD at 1.2V */
 		ret = regmap_update_bits(sgtl5000->regmap,
@@ -1698,6 +1795,7 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 				"Error %d setting LINREG_VDDD\n", ret);
 
 		ana_pwr |= SGTL5000_LINEREG_D_POWERUP;
+		dev_err(&client->dev, "ana_pwr - if : %d\n", ana_pwr);
 		dev_info(&client->dev,
 			 "Using internal LDO instead of VDDD: check ER1 erratum\n");
 	} else {
@@ -1707,8 +1805,10 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 		 */
 		ana_pwr &= ~(SGTL5000_STARTUP_POWERUP
 			     | SGTL5000_LINREG_SIMPLE_POWERUP);
+		dev_err(&client->dev, "ana_pwr - else : %d\n", ana_pwr);
 		dev_dbg(&client->dev, "Using external VDDD\n");
 	}
+	dev_err(&client->dev, "ana_pwr  : %d\n", ana_pwr);
 	ret = regmap_write(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, ana_pwr);
 	if (ret)
 		dev_err(&client->dev,
@@ -1779,14 +1879,14 @@ static int sgtl5000_i2c_probe(struct i2c_client *client)
 		goto disable_clk;
 
 	return 0;
-
+	dev_err(&client->dev, "before disable_clk\n");
 disable_clk:
 	clk_disable_unprepare(sgtl5000->mclk);
-
+	dev_err(&client->dev, "before disable_regs\n");
 disable_regs:
 	regulator_bulk_disable(sgtl5000->num_supplies, sgtl5000->supplies);
 	regulator_bulk_free(sgtl5000->num_supplies, sgtl5000->supplies);
-
+	dev_err(&client->dev, "before return ret\n");
 	return ret;
 }
 

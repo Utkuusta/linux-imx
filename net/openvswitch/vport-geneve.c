@@ -124,6 +124,7 @@ static struct vport_ops ovs_geneve_vport_ops = {
 
 static int __init ovs_geneve_tnl_init(void)
 {
+	printk("openvswitch: Geneve switching port\n");
 	return ovs_vport_ops_register(&ovs_geneve_vport_ops);
 }
 

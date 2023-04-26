@@ -639,6 +639,7 @@ static int ov5645_set_power_on(struct ov5645 *ov5645)
 {
 	int ret;
 
+	/* External clk and supply
 	ret = regulator_bulk_enable(OV5645_NUM_SUPPLIES, ov5645->supplies);
 	if (ret < 0)
 		return ret;
@@ -649,6 +650,7 @@ static int ov5645_set_power_on(struct ov5645 *ov5645)
 		regulator_bulk_disable(OV5645_NUM_SUPPLIES, ov5645->supplies);
 		return ret;
 	}
+	*/
 
 	usleep_range(5000, 15000);
 	gpiod_set_value_cansleep(ov5645->enable_gpio, 1);
@@ -665,8 +667,10 @@ static void ov5645_set_power_off(struct ov5645 *ov5645)
 {
 	gpiod_set_value_cansleep(ov5645->rst_gpio, 1);
 	gpiod_set_value_cansleep(ov5645->enable_gpio, 0);
+	/* External clk and supply
 	clk_disable_unprepare(ov5645->xclk);
 	regulator_bulk_disable(OV5645_NUM_SUPPLIES, ov5645->supplies);
+	*/
 }
 
 static int ov5645_s_power(struct v4l2_subdev *sd, int on)
@@ -1061,6 +1065,8 @@ static int ov5645_probe(struct i2c_client *client)
 	u32 xclk_freq;
 	int ret;
 
+	dev_err(dev, "ov5645 probing...\n");
+
 	ov5645 = devm_kzalloc(dev, sizeof(struct ov5645), GFP_KERNEL);
 	if (!ov5645)
 		return -ENOMEM;
@@ -1090,11 +1096,13 @@ static int ov5645_probe(struct i2c_client *client)
 	}
 
 	/* get system clock (xclk) */
+	/* External clk and supply
 	ov5645->xclk = devm_clk_get(dev, "xclk");
 	if (IS_ERR(ov5645->xclk)) {
 		dev_err(dev, "could not get xclk");
 		return PTR_ERR(ov5645->xclk);
 	}
+	*/
 
 	ret = of_property_read_u32(dev->of_node, "clock-frequency", &xclk_freq);
 	if (ret) {
@@ -1109,6 +1117,7 @@ static int ov5645_probe(struct i2c_client *client)
 		return -EINVAL;
 	}
 
+	/* External clk and supply
 	ret = clk_set_rate(ov5645->xclk, xclk_freq);
 	if (ret) {
 		dev_err(dev, "could not set xclk frequency\n");
@@ -1122,6 +1131,7 @@ static int ov5645_probe(struct i2c_client *client)
 				      ov5645->supplies);
 	if (ret < 0)
 		return ret;
+	*/
 
 	ov5645->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_HIGH);
 	if (IS_ERR(ov5645->enable_gpio)) {
@@ -1242,6 +1252,8 @@ static int ov5645_probe(struct i2c_client *client)
 	}
 
 	ov5645_entity_init_cfg(&ov5645->sd, NULL);
+
+	dev_err(dev, "ov5645 probed...\n");
 
 	return 0;
 

@@ -351,6 +351,8 @@ static int pcf857x_probe(struct i2c_client *client,
 	gpio->out = ~n_latch;
 	gpio->status = gpio->read(gpio->client);
 
+	dev_info(&client->dev, "n_latch : %x, ~n_latch : %x\n", n_latch, (~n_latch & 0xFFFF));
+
 	/* Enable irqchip if we have an interrupt */
 	if (client->irq) {
 		struct gpio_irq_chip *girq;

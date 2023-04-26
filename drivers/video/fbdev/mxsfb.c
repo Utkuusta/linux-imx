@@ -733,8 +733,16 @@ static void mxsfb_enable_controller(struct fb_info *fb_info)
 	}
 #endif
 
+#ifdef CONFIG_SOC_INVSOM6UL
+	// Inventron LCD
+	writel(CTRL2_OUTSTANDING_REQS__REQ_16 + (5 << 12) + (5 << 16),
+		host->base + LCDC_V4_CTRL2 + REG_SET);
+	dev_err(&host->pdev->dev,
+							"lcd rgb format changed\n");
+#else
 	writel(CTRL2_OUTSTANDING_REQS__REQ_16,
 		host->base + LCDC_V4_CTRL2 + REG_SET);
+#endif
 
 	/* if it was disabled, re-enable the mode again */
 	writel(CTRL_DOTCLK_MODE, host->base + LCDC_CTRL + REG_SET);

@@ -87,6 +87,7 @@ static struct vport_ops ovs_gre_vport_ops = {
 
 static int __init ovs_gre_tnl_init(void)
 {
+	printk("openvswitch: GRE switching port\n");
 	return ovs_vport_ops_register(&ovs_gre_vport_ops);
 }
 
