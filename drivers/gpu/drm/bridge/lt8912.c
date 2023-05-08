@@ -17,7 +17,7 @@
 #include <video/of_display_timing.h>
 #include <video/videomode.h>
 
-#include <drm/drmP.h>
+//#include <drm/drmP.h>
 #include <drm/drm_of.h>
 #include <drm/drm_atomic.h>
 #include <drm/drm_atomic_helper.h>
