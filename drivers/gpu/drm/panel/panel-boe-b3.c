@@ -35,11 +35,11 @@ struct cmd_set_entry {
 	u8 param;
 };
 
-/*static const u32 boe_bus_formats[] = {
+static const u32 boe_bus_formats[] = {
 	MEDIA_BUS_FMT_RGB888_1X24,
 	MEDIA_BUS_FMT_RGB666_1X18,
 	MEDIA_BUS_FMT_RGB565_1X16,
-};*/
+};
 
 static const u32 boe_bus_flags = DRM_BUS_FLAG_DE_LOW |
 				 DRM_BUS_FLAG_PIXDATA_DRIVE_NEGEDGE;
@@ -335,7 +335,7 @@ static int boe_panel_get_modes(struct drm_panel *panel, struct drm_connector *co
 	//struct drm_connector *connector = panel->connector;
 	struct drm_display_mode *mode;
 
-	mode = drm_mode_duplicate(panel->drm, &default_mode);
+	mode = drm_mode_duplicate(panel->dev, &default_mode);
 	if (!mode) {
 		DRM_DEV_ERROR(panel->dev, "failed to add mode %ux%ux@%u\n",
 			      default_mode.hdisplay, default_mode.vdisplay);
@@ -513,8 +513,6 @@ static void boe_panel_remove(struct mipi_dsi_device *dsi)
 			      ret);
 
 	drm_panel_remove(&boe->panel);
-
-	return 0;
 }
 
 static void boe_panel_shutdown(struct mipi_dsi_device *dsi)
