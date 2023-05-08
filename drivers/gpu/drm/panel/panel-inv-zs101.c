@@ -14,6 +14,7 @@
 #include <video/mipi_display.h>
 #include <video/of_videomode.h>
 #include <video/videomode.h>
+#include <linux/media-bus-format.h>
 
 #include <drm/drm_crtc.h>
 #include <drm/drm_mipi_dsi.h>
@@ -41,7 +42,7 @@ static const u32 rad_bus_formats[] = {
 };
 
 static const u32 rad_bus_flags = DRM_BUS_FLAG_DE_LOW |
-				 DRM_BUS_FLAG_PIXDATA_NEGEDGE;
+				 DRM_BUS_FLAG_PIXDATA_DRIVE_NEGEDGE;
 
 struct rad_panel {
 	struct drm_panel panel;
@@ -67,7 +68,7 @@ static const struct drm_display_mode default_mode = {
 	.vsync_start = 1280 + 2,
 	.vsync_end = 1280 + 2 + 2,
 	.vtotal = 1280 + 2 + 2 + 2,
-	.vrefresh = 60,
+	//.vrefresh = 60,
 	.width_mm = 135,
 	.height_mm = 216,
 	.flags = DRM_MODE_FLAG_NHSYNC |
@@ -88,7 +89,7 @@ static inline int st7796_dsi_write(struct mipi_dsi_device *dsi, const void *seq,
 #define ST7796_DSI(dsi, seq...)                              \
         {                                                       \
                 const u8 d[] = { seq };                         \
-                dev_err(&dsi->dev, "Writing command %02x, length: %d\n", d[0], ARRAY_SIZE(d)); \
+                dev_err(&dsi->dev, "Writing command %02x, length: %ld\n", d[0], ARRAY_SIZE(d)); \
                 st7796_dsi_write(dsi, d, ARRAY_SIZE(d));     \
         }
 
@@ -317,22 +318,21 @@ static int rad_panel_disable(struct drm_panel *panel)
 	return 0;
 }
 
-static int rad_panel_get_modes(struct drm_panel *panel)
+static int rad_panel_get_modes(struct drm_panel *panel, struct drm_connector *connector)
 {
-	struct drm_connector *connector = panel->connector;
+	//struct drm_connector *connector = panel->connector;
 	struct drm_display_mode *mode;
 
-	mode = drm_mode_duplicate(panel->drm, &default_mode);
+	mode = drm_mode_duplicate(connector->dev, &default_mode);
 	if (!mode) {
 		DRM_DEV_ERROR(panel->dev, "failed to add mode %ux%ux@%u\n",
-			      default_mode.hdisplay, default_mode.vdisplay,
-			      default_mode.vrefresh);
+			      default_mode.hdisplay, default_mode.vdisplay);
 		return -ENOMEM;
 	}
 
 	drm_mode_set_name(mode);
 	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
-	drm_mode_probed_add(panel->connector, mode);
+	drm_mode_probed_add(connector, mode);
 
 	connector->display_info.width_mm = mode->width_mm;
 	connector->display_info.height_mm = mode->height_mm;
@@ -494,14 +494,13 @@ static int rad_panel_probe(struct mipi_dsi_device *dsi)
 	if (ret)
 		return ret;
 
-	drm_panel_init(&panel->panel);
-	panel->panel.funcs = &rad_panel_funcs;
-	panel->panel.dev = dev;
+	drm_panel_init(&panel->panel, dev, &rad_panel_funcs, DRM_MODE_CONNECTOR_DSI);
+	/*panel->panel.funcs = &rad_panel_funcs;
+	panel->panel.dev = dev;*/
 	dev_set_drvdata(dev, panel);
 
-	ret = drm_panel_add(&panel->panel);
-	if (ret)
-		return ret;
+	drm_panel_add(&panel->panel);
+
 
 	ret = mipi_dsi_attach(dsi);
 	if (ret)
@@ -511,7 +510,7 @@ static int rad_panel_probe(struct mipi_dsi_device *dsi)
 	return ret;
 }
 
-static int rad_panel_remove(struct mipi_dsi_device *dsi)
+static void rad_panel_remove(struct mipi_dsi_device *dsi)
 {
 	struct rad_panel *rad = mipi_dsi_get_drvdata(dsi);
 	struct device *dev = &dsi->dev;
@@ -524,7 +523,6 @@ static int rad_panel_remove(struct mipi_dsi_device *dsi)
 
 	drm_panel_remove(&rad->panel);
 
-	return 0;
 }
 
 static void rad_panel_shutdown(struct mipi_dsi_device *dsi)
