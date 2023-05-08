@@ -42,7 +42,7 @@ static const u32 boe_bus_formats[] = {
 };
 
 static const u32 boe_bus_flags = DRM_BUS_FLAG_DE_LOW |
-				 DRM_BUS_FLAG_PIXDATA_NEGEDGE;
+				 DRM_BUS_FLAG_PIXDATA_DRIVE_NEGEDGE;
 
 struct boe_panel {
 	struct drm_panel panel;
@@ -121,7 +121,7 @@ static const struct drm_display_mode default_mode = {
  	.vsync_start = 800 + 3,
  	.vsync_end = 800 + 3 + 6,
  	.vtotal = 800 + 3 + 6 + 22,
- 	.vrefresh = 60,
+ 	//.vrefresh = 60,
  	.width_mm = 217,
  	.height_mm = 136,
  	.flags = DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC
@@ -330,22 +330,21 @@ static int boe_panel_disable(struct drm_panel *panel)
 	return 0;
 }
 
-static int boe_panel_get_modes(struct drm_panel *panel)
+static int boe_panel_get_modes(struct drm_panel *panel, struct drm_connector *connector)
 {
-	struct drm_connector *connector = panel->connector;
+	//struct drm_connector *connector = panel->connector;
 	struct drm_display_mode *mode;
 
 	mode = drm_mode_duplicate(panel->drm, &default_mode);
 	if (!mode) {
 		DRM_DEV_ERROR(panel->dev, "failed to add mode %ux%ux@%u\n",
-			      default_mode.hdisplay, default_mode.vdisplay,
-			      default_mode.vrefresh);
+			      default_mode.hdisplay, default_mode.vdisplay);
 		return -ENOMEM;
 	}
 
 	drm_mode_set_name(mode);
 	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
-	drm_mode_probed_add(panel->connector, mode);
+	drm_mode_probed_add(connector, mode);
 
 	connector->display_info.width_mm = mode->width_mm;
 	connector->display_info.height_mm = mode->height_mm;
@@ -486,14 +485,12 @@ static int boe_panel_probe(struct mipi_dsi_device *dsi)
 	if (ret)
 		return ret;
 
-	drm_panel_init(&panel->panel);
-	panel->panel.funcs = &boe_panel_funcs;
-	panel->panel.dev = dev;
+	drm_panel_init(&panel->panel, dev, &boe_panel_funcs, DRM_MODE_CONNECTOR_DSI);
+	/*panel->panel.funcs = &boe_panel_funcs;
+	panel->panel.dev = dev;*/
 	dev_set_drvdata(dev, panel);
 
-	ret = drm_panel_add(&panel->panel);
-	if (ret)
-		return ret;
+	drm_panel_add(&panel->panel);
 
 	ret = mipi_dsi_attach(dsi);
 	if (ret)
@@ -504,7 +501,7 @@ static int boe_panel_probe(struct mipi_dsi_device *dsi)
 	return ret;
 }
 
-static int boe_panel_remove(struct mipi_dsi_device *dsi)
+static void boe_panel_remove(struct mipi_dsi_device *dsi)
 {
 	struct boe_panel *boe = mipi_dsi_get_drvdata(dsi);
 	struct device *dev = &dsi->dev;
