@@ -35,11 +35,11 @@ struct cmd_set_entry {
 	u8 param;
 };
 
-static const u32 boe_bus_formats[] = {
+/*static const u32 boe_bus_formats[] = {
 	MEDIA_BUS_FMT_RGB888_1X24,
 	MEDIA_BUS_FMT_RGB666_1X18,
 	MEDIA_BUS_FMT_RGB565_1X16,
-};
+};*/
 
 static const u32 boe_bus_flags = DRM_BUS_FLAG_DE_LOW |
 				 DRM_BUS_FLAG_PIXDATA_DRIVE_NEGEDGE;
