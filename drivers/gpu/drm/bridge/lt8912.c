@@ -16,6 +16,7 @@
 #include <linux/regmap.h>
 #include <video/of_display_timing.h>
 #include <video/videomode.h>
+#include <linux/media-bus-format.h>
 
 //#include <drm/drmP.h>
 #include <drm/drm_of.h>
@@ -348,7 +349,7 @@ static int lt8912_connector_get_modes(struct drm_connector *connector)
 	}
 
 	connector->display_info.bus_flags = DRM_BUS_FLAG_DE_LOW |
-					    DRM_BUS_FLAG_PIXDATA_NEGEDGE;
+					    DRM_BUS_FLAG_PIXDATA_DRIVE_NEGEDGE;
 	ret = drm_display_info_set_bus_formats(&connector->display_info,
 					       &bus_format, 1);
 
@@ -408,7 +409,7 @@ static void lt8912_bridge_mode_set(struct drm_bridge *bridge,
 	drm_mode_copy(&lt->mode, adj);
 }
 
-static int lt8912_bridge_attach(struct drm_bridge *bridge)
+static int lt8912_bridge_attach(struct drm_bridge *bridge, enum drm_bridge_attach_flags flags)
 {
 	struct lt8912 *lt = bridge_to_lt8912(bridge);
 	struct drm_connector *connector = &lt->connector;
@@ -467,8 +468,8 @@ static int lt8912_i2c_init(struct lt8912 *lt,
 	for (i = 0; i < ARRAY_SIZE(info); i++) {
 		dev_err(&client->dev, "LT8912 regmap init %s\n", info[i].type);
 		if (i > 0 ) {
-			client = i2c_new_dummy(client->adapter, info[i].addr);
-			if (!client)
+			client = i2c_new_dummy_device(client->adapter, info[i].addr);
+			if (IS_ERR(client))
 				return -ENODEV;
 		}
 		regmap = devm_regmap_init_i2c(client, &lt8912_regmap_config);
@@ -515,7 +516,7 @@ static int lt8912_attach_dsi(struct lt8912 *lt)
 	dsi->lanes = lt->num_dsi_lanes;
 	dsi->format = MIPI_DSI_FMT_RGB888;
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
-			  MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_EOT_PACKET;
+			  MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET;
 
 	ret = mipi_dsi_attach(dsi);
 	if (ret < 0) {
@@ -653,7 +654,7 @@ put_i2c_ddc:
 	return ret;
 }
 
-static int lt8912_remove(struct i2c_client *i2c)
+static void lt8912_remove(struct i2c_client *i2c)
 {
 	struct lt8912 *lt = i2c_get_clientdata(i2c);
 
@@ -662,7 +663,6 @@ static int lt8912_remove(struct i2c_client *i2c)
 	drm_bridge_remove(&lt->bridge);
 	of_node_put(lt->host_node);
 
-	return 0;
 }
 
 static const struct i2c_device_id lt8912_i2c_ids[] = {

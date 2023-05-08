@@ -325,7 +325,7 @@ static int rad_panel_get_modes(struct drm_panel *panel, struct drm_connector *co
 
 	mode = drm_mode_duplicate(connector->dev, &default_mode);
 	if (!mode) {
-		DRM_DEV_ERROR(panel->dev, "failed to add mode %ux%ux@%u\n",
+		DRM_DEV_ERROR(panel->dev, "failed to add mode %ux%ux@\n",
 			      default_mode.hdisplay, default_mode.vdisplay);
 		return -ENOMEM;
 	}
