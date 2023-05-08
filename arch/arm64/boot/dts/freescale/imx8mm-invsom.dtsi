@@ -1302,7 +1302,7 @@
 				 <&src IMX8MQ_RESET_PCIE_CTRL_APPS_EN>,
 				 /*<&src IMX8MQ_RESET_PCIE_CTRL_APPS_CLK_REQ>,*/
 				 <&src IMX8MQ_RESET_PCIE_CTRL_APPS_TURNOFF>;
-			reset-names = "pciephy", "apps", "clkreq", "turnoff";
+			reset-names = "pciephy", "apps", "turnoff";
 			fsl,imx7d-pcie-phy = <&pcie_phy>;
 			status = "disabled";
 		};
@@ -1321,7 +1321,7 @@
 				 <&src IMX8MQ_RESET_PCIE_CTRL_APPS_EN>,
 				// <&src IMX8MQ_RESET_PCIE_CTRL_APPS_CLK_REQ>,
 				 <&src IMX8MQ_RESET_PCIE_CTRL_APPS_TURNOFF>;
-			reset-names = "pciephy", "apps", "clkreq", "turnoff";
+			reset-names = "pciephy", "apps", "turnoff";
 			fsl,imx7d-pcie-phy = <&pcie_phy>;
 			num-ib-windows = <4>;
 			num-ob-windows = <4>;
