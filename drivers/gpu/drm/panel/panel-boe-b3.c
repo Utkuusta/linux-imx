@@ -15,6 +15,7 @@
 #include <video/mipi_display.h>
 #include <video/of_videomode.h>
 #include <video/videomode.h>
+#include <linux/media-bus-format.h>
 
 #include <drm/drm_crtc.h>
 #include <drm/drm_mipi_dsi.h>
@@ -335,7 +336,7 @@ static int boe_panel_get_modes(struct drm_panel *panel, struct drm_connector *co
 	//struct drm_connector *connector = panel->connector;
 	struct drm_display_mode *mode;
 
-	mode = drm_mode_duplicate(panel->dev, &default_mode);
+	mode = drm_mode_duplicate(connector->dev, &default_mode);
 	if (!mode) {
 		DRM_DEV_ERROR(panel->dev, "failed to add mode %ux%ux@%u\n",
 			      default_mode.hdisplay, default_mode.vdisplay);
