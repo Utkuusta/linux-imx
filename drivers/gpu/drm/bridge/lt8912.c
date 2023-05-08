@@ -25,6 +25,7 @@
 #include <drm/drm_probe_helper.h>
 #include <drm/drm_panel.h>
 #include <drm/drm_mipi_dsi.h>
+#include <drm/drm_edid.h>
 
 struct lt8912 {
 	struct drm_bridge bridge;

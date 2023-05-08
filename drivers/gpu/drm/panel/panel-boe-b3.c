@@ -436,9 +436,9 @@ static int boe_panel_probe(struct mipi_dsi_device *dsi)
 	struct device *dev = &dsi->dev;
 	struct device_node *np = dev->of_node;
 	struct boe_panel *panel;
-	struct backlight_properties bl_props;
+	//struct backlight_properties bl_props;
 	int ret;
-	u32 video_mode;
+	//u32 video_mode;
 
 	usleep_range(2000000, 2500000);
 
