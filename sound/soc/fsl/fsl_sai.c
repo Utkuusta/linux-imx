@@ -31,6 +31,7 @@
 #include <linux/clkdev.h>
 #include <linux/i2c.h>
 #include <linux/device.h>
+#include <linux/clk-provider.h>
 #define DEBUG
 
 #define FSL_SAI_FLAGS (FSL_SAI_CSR_SEIE |\

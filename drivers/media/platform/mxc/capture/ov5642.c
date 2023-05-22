@@ -2995,7 +2995,7 @@ static struct regulator *gpo_regulator;
 
 static int ov5642_probe(struct i2c_client *adapter,
 				const struct i2c_device_id *device_id);
-static int ov5642_remove(struct i2c_client *client);
+static void ov5642_remove(struct i2c_client *client);
 
 static s32 ov5642_read_reg(u16 reg, u8 *val);
 static s32 ov5642_write_reg(u16 reg, u8 val);
@@ -3619,7 +3619,7 @@ static int ioctl_s_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 		else if (old_fps == 30)
 			old_frame_rate = ov5642_30_fps;
 		else {
-			pr_warning(" No valid frame rate set!\n");
+			pr_warn(" No valid frame rate set!\n");
 			old_frame_rate = ov5642_30_fps;
 		}
 
@@ -3857,7 +3857,7 @@ static int ioctl_enum_frameintervals(struct v4l2_int_device *s,
 
 	if (fival->pixel_format == 0 || fival->width == 0 ||
 			fival->height == 0) {
-		pr_warning("Please assign pixelformat, width and height.\n");
+		pr_warn("Please assign pixelformat, width and height.\n");
 		return -EINVAL;
 	}
 
@@ -4017,6 +4017,8 @@ static int ioctl_dev_exit(struct v4l2_int_device *s)
  * This structure defines all the ioctls for this module and links them to the
  * enumeration.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
 static struct v4l2_int_ioctl_desc ov5642_ioctl_desc[] = {
 	{ vidioc_int_dev_init_num,
 	  (v4l2_int_ioctl_func *)ioctl_dev_init },
@@ -4056,7 +4058,7 @@ static struct v4l2_int_ioctl_desc ov5642_ioctl_desc[] = {
 	{ vidioc_int_g_chip_ident_num,
 	  (v4l2_int_ioctl_func *)ioctl_g_chip_ident },
 };
-
+#pragma GCC diagnostic pop
 static struct v4l2_int_slave ov5642_slave = {
 	.ioctls = ov5642_ioctl_desc,
 	.num_ioctls = ARRAY_SIZE(ov5642_ioctl_desc),
@@ -4166,13 +4168,13 @@ static int ov5642_probe(struct i2c_client *client,
 
 	retval = ov5642_read_reg(OV5642_CHIP_ID_HIGH_BYTE, &chip_id_high);
 	if (retval < 0 || chip_id_high != 0x56) {
-		pr_warning("camera ov5642 is not found\n");
+		pr_warn("camera ov5642 is not found\n");
 		clk_disable_unprepare(ov5642_data.sensor_clk);
 		return -ENODEV;
 	}
 	retval = ov5642_read_reg(OV5642_CHIP_ID_LOW_BYTE, &chip_id_low);
 	if (retval < 0 || chip_id_low != 0x42) {
-		pr_warning("camera ov5642 is not found\n");
+		pr_warn("camera ov5642 is not found\n");
 		clk_disable_unprepare(ov5642_data.sensor_clk);
 		return -ENODEV;
 	}
@@ -4194,7 +4196,7 @@ static int ov5642_probe(struct i2c_client *client,
  * @param client            struct i2c_client *
  * @return  Error code indicating success or failure
  */
-static int ov5642_remove(struct i2c_client *client)
+static void ov5642_remove(struct i2c_client *client)
 {
 	v4l2_int_device_unregister(&ov5642_int_device);
 
@@ -4210,7 +4212,6 @@ static int ov5642_remove(struct i2c_client *client)
 	if (io_regulator)
 		regulator_disable(io_regulator);
 
-	return 0;
 }
 
 /*!
