@@ -1169,7 +1169,7 @@ CONFIG_HAVE_EBPF_JIT=y
 # Device Drivers
 #
 CONFIG_HAVE_PCI=y
-# CONFIG_PCI is not set
+CONFIG_PCI=y
 # CONFIG_PCCARD is not set
 
 #
