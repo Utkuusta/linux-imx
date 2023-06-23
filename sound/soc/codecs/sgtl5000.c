@@ -25,7 +25,7 @@
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
 #include <sound/initval.h>
-
+#include "../../../drivers/gpio/gpiolib.h"
 #include <linux/gpio/consumer.h>
 #include "sgtl5000.h"
 
