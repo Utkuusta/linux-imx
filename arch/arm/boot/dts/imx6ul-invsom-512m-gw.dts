@@ -128,12 +128,6 @@
 	status = "disabled";
 };
 
-&adc2 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_adc2>;
-	status = "disabled";
-};
-
 &can2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexcan2>;
