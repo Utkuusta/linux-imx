@@ -70,15 +70,6 @@
 		off-on-delay = <20000>;
 		enable-active-high;
 	};
-	
-	reg_sd2_vmmc: sd2_regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "VSD_3V3_2";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		gpio = <&enable_latch 14 GPIO_ACTIVE_LOW>;
-		off-on-delay = <20000>;
-	};
 
 	reg_can_3v3: regulator@0 {
 		compatible = "regulator-fixed";
@@ -167,7 +158,7 @@
 &i2c1 {
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c2>;
+	pinctrl-0 = <&pinctrl_i2c1>;
 	status = "disabled";
 
 };
