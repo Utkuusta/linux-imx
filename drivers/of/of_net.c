@@ -53,12 +53,14 @@ static const void *of_get_mac_addr_nvmem(struct device_node *np)
 	int ret;
 	const void *mac;
 	u8 nvmem_mac[ETH_ALEN];
-	struct platform_device *pdev = of_find_device_by_node(np);
+	char *macc;
 
+	struct platform_device *pdev = of_find_device_by_node(np);
+	printk("----%s %s\n", __FILE__, __func__);
 	if (!pdev)
 		return ERR_PTR(-ENODEV);
-
-	ret = nvmem_get_mac_address(&pdev->dev, &nvmem_mac);
+	printk("----%s %s before nvmem_get_mac_address\n", __FILE__, __func__);
+	ret = nvmem_get_mac_address(&pdev->dev, nvmem_mac);
 	if (ret) {
 		put_device(&pdev->dev);
 		return ERR_PTR(ret);
@@ -69,6 +71,9 @@ static const void *of_get_mac_addr_nvmem(struct device_node *np)
 	if (!mac)
 		return ERR_PTR(-ENOMEM);
 
+	//macc = (char *)mac;
+
+	//printk("----%s %s before return macc = %x\n", __FILE__, __func__, macc);
 	return mac;
 }
 
@@ -98,22 +103,24 @@ const void *of_get_mac_address(struct device_node *np)
 {
 	const void *addr;
 
+	printk("----%s %s\n", __FILE__, __func__);
+
 	addr = of_get_mac_addr(np, "mac-address");
 	if (addr)
 		return addr;
-
+	printk("----%s %s mac-address\n", __FILE__, __func__);
 	addr = of_get_mac_addr(np, "local-mac-address");
 	if (addr)
 		return addr;
-
+	printk("----%s %s local-mac-address\n", __FILE__, __func__);
 	addr = of_get_mac_addr(np, "address");
 	if (addr)
 		return addr;
-
+	printk("----%s %s after address\n", __FILE__, __func__);
 	addr = of_get_mac_addr(np, "nvmem-mac-address");
 	if (addr)
 		return addr;
-
+	printk("----%s %s after nvmem-mac-address\n", __FILE__, __func__);
 	return of_get_mac_addr_nvmem(np);
 }
 EXPORT_SYMBOL(of_get_mac_address);

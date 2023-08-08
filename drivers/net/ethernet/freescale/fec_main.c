@@ -1769,13 +1769,26 @@ static int fec_get_mac(struct net_device *ndev)
 	/*
 	 * 2) from device tree data
 	 */
+	printk("----%s %s before device tree data\n", __FILE__, __func__);
+	//dev_err(&fep->pdev->dev, "----fec_get_mac before device tree data\n");
 	if (!is_valid_ether_addr(iap)) {
+		printk("----%s %s if device tree data\n", __FILE__, __func__);
+		//dev_err(&fep->pdev->dev, "----fec_get_mac if device tree data\n");
 		struct device_node *np = fep->pdev->dev.of_node;
 		if (np) {
 			const char *mac = of_get_mac_address(np);
+			printk("----%s %s if (np) \n", __FILE__, __func__);
 			if (!IS_ERR(mac))
+			{
 				iap = (unsigned char *) mac;
-			else if (PTR_ERR(mac) == -EPROBE_DEFER)
+				dev_err(&fep->pdev->dev, "----MAC address: ");
+				int i;
+				for(i = 0; i < ETH_ALEN; ++i)
+					dev_err(&fep->pdev->dev, "%x ", mac[i]);
+
+				dev_err(&fep->pdev->dev, "\n");
+
+			}else if (PTR_ERR(mac) == -EPROBE_DEFER)
 				return -EPROBE_DEFER;
 		}
 	}
@@ -1783,20 +1796,31 @@ static int fec_get_mac(struct net_device *ndev)
 	/*
 	 * 3) from flash or fuse (via platform data)
 	 */
+	dev_err(&fep->pdev->dev, "----fec_get_mac before fuse \n");
 	if (!is_valid_ether_addr(iap)) {
+		dev_err(&fep->pdev->dev, "----fec_get_mac if before fuse \n");
 #ifdef CONFIG_M5272
 		if (FEC_FLASHMAC)
 			iap = (unsigned char *)FEC_FLASHMAC;
 #else
-		if (pdata)
+		if (pdata){
 			iap = (unsigned char *)&pdata->mac;
+			dev_err(&fep->pdev->dev, "----MAC address: ");
+			int i;
+			for(i = 0; i < ETH_ALEN; ++i)
+				dev_err(&fep->pdev->dev, "%x ", pdata->mac[i]);
+
+			dev_err(&fep->pdev->dev, "\n");
+		}
 #endif
 	}
 
 	/*
 	 * 4) FEC mac registers set by bootloader
 	 */
+	dev_err(&fep->pdev->dev, "----fec_get_mac before bootloader \n");
 	if (!is_valid_ether_addr(iap)) {
+		dev_err(&fep->pdev->dev, "----fec_get_mac if bootloader \n");
 		*((__be32 *) &tmpaddr[0]) =
 			cpu_to_be32(readl(fep->hwp + FEC_ADDR_LOW));
 		*((__be16 *) &tmpaddr[4]) =
@@ -1807,7 +1831,9 @@ static int fec_get_mac(struct net_device *ndev)
 	/*
 	 * 5) random mac address
 	 */
+	dev_err(&fep->pdev->dev, "----fec_get_mac before random mac address \n");
 	if (!is_valid_ether_addr(iap)) {
+		dev_err(&fep->pdev->dev, "----fec_get_mac before if random mac address \n");
 		/* Report it and use a random ethernet address instead */
 		dev_err(&fep->pdev->dev, "Invalid MAC address: %pM\n", iap);
 		eth_hw_addr_random(ndev);

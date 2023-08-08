@@ -52,6 +52,8 @@ void __init imx6_enet_mac_init(const char *enet_compat, const char *ocotp_compat
 	u8 *macaddr;
 	int i, id;
 
+	printk("----%s %s\n", __FILE__, __func__);
+
 	for (i = 0; i < 2; i++) {
 		enet_np = of_find_compatible_node(from, NULL, enet_compat);
 		if (!enet_np)
@@ -60,8 +62,10 @@ void __init imx6_enet_mac_init(const char *enet_compat, const char *ocotp_compat
 		from = enet_np;
 
 		if (of_get_mac_address(enet_np))
+		{
+			printk("----%s %s put_enet_node - 1\n", __FILE__, __func__);
 			goto put_enet_node;
-
+		}
 		id = of_alias_get_id(enet_np, "ethernet");
 		if (id < 0)
 			id = i;
@@ -84,15 +88,19 @@ void __init imx6_enet_mac_init(const char *enet_compat, const char *ocotp_compat
 		else
 			macaddr_high = readl_relaxed(base + OCOTP_MACn(0));
 
-		newmac = kzalloc(sizeof(*newmac) + 6, GFP_KERNEL);
-		if (!newmac)
-			goto put_ocotp_node;
+		printk("----%s %s id = %d macaddr_low = %x macaddr_high = %x macaddr1_high = %x \n", __FILE__, __func__, id, macaddr_low, macaddr_high, macaddr1_high);
 
+		newmac = kzalloc(sizeof(*newmac) + 6, GFP_KERNEL);
+		if (!newmac){
+			printk("----%s %s put_ocotp_node - 2\n", __FILE__, __func__);
+			goto put_ocotp_node;
+		}
 		newmac->value = newmac + 1;
 		newmac->length = 6;
 		newmac->name = kstrdup("local-mac-address", GFP_KERNEL);
 		if (!newmac->name) {
 			kfree(newmac);
+			printk("----%s %s put_ocotp_node - 3\n", __FILE__, __func__);
 			goto put_ocotp_node;
 		}
 
@@ -112,7 +120,7 @@ void __init imx6_enet_mac_init(const char *enet_compat, const char *ocotp_compat
 			macaddr[1] = macaddr_low & 0xff;
 			macaddr[0] = (macaddr_low >> 8) & 0xff;
 		}
-
+		printk("----%s %s id = %d macaddr[0] = %x macaddr[1] = %x macaddr[2] = %x macaddr[3] = %x macaddr[4] = %x macaddr[5] = %x\n", __FILE__, __func__, id, macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
 		of_update_property(enet_np, newmac);
 
 put_ocotp_node:
