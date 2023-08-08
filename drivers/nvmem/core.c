@@ -770,41 +770,28 @@ struct nvmem_cell *of_nvmem_cell_get(struct device_node *np, const char *id)
 	struct nvmem_cell *cell;
 	int index = 0;
 
-	printk("----%s %s\n", __FILE__, __func__);
-
-	printk("----%s %s before if(id) np->name = %s np->full_name = %s\n", __FILE__, __func__, np->name, np->full_name);
 	/* if cell name exists, find index to the name */
 	if (id)
 		index = of_property_match_string(np, "nvmem-cell-names", id);
-
-	printk("----%s %s after if(id) index = %d\n", __FILE__, __func__, index);
 
 	cell_np = of_parse_phandle(np, "nvmem-cells", index);
 	if (!cell_np)
 		return ERR_PTR(-ENOENT);
 
-	printk("----%s %s after if (!cell_np) cell_np->name = %s cell_np->full_name = %s\n", __FILE__, __func__, cell_np->name, cell_np->full_name);
-
 	nvmem_np = of_get_next_parent(cell_np);
 	if (!nvmem_np)
 		return ERR_PTR(-EINVAL);
-
-	printk("----%s %s after if (!nvmem_np) nvmem_np->name = %s nvmem_np->full_name = %s\n", __FILE__, __func__, nvmem_np->name, nvmem_np->full_name);
 
 	nvmem = __nvmem_device_get(nvmem_np, NULL);
 	of_node_put(nvmem_np);
 	if (IS_ERR(nvmem))
 		return ERR_CAST(nvmem);
 
-	printk("----%s %s after if (IS_ERR(nvmem))\n", __FILE__, __func__);
-
 	cell = nvmem_find_cell_by_node(nvmem, cell_np);
 	if (!cell) {
 		__nvmem_device_put(nvmem);
 		return ERR_PTR(-ENOENT);
 	}
-
-	printk("----%s %s after if (!cell)\n", __FILE__, __func__);
 
 	return cell;
 }
@@ -826,21 +813,16 @@ EXPORT_SYMBOL_GPL(of_nvmem_cell_get);
 struct nvmem_cell *nvmem_cell_get(struct device *dev, const char *id)
 {
 	struct nvmem_cell *cell;
-	printk("----%s %s\n", __FILE__, __func__);
+
 	if (dev->of_node) { /* try dt first */
 		cell = of_nvmem_cell_get(dev->of_node, id);
-		printk("----%s %s if (dev->of_node)\n",  __FILE__, __func__);
 		if (!IS_ERR(cell) || PTR_ERR(cell) == -EPROBE_DEFER)
 			return cell;
 	}
 
-	//printk("----%s %s after if (dev->of_node)\n", __FILE__, __func__);
-
 	/* NULL cell id only allowed for device tree; invalid otherwise */
 	if (!id)
 		return ERR_PTR(-EINVAL);
-
-	//printk("----%s %s before nvmem_cell_get_from_lookup\n", __FILE__, __func__);
 
 	return nvmem_cell_get_from_lookup(dev, id);
 }
@@ -960,14 +942,10 @@ static int __nvmem_cell_read(struct nvmem_device *nvmem,
 {
 	int rc;
 
-	printk("----%s %s\n", __FILE__, __func__);
-
 	rc = nvmem_reg_read(nvmem, cell->offset, buf, cell->bytes);
-	printk("----%s %s rc = %d buf[0] = %x\n", __FILE__, __func__, rc, *((char *)buf));
+
 	if (rc)
 		return rc;
-
-	printk("----%s %s before if (cell->bit_offset || cell->nbits)\n", __FILE__, __func__);
 
 	/* shift bits in-place */
 	if (cell->bit_offset || cell->nbits)
@@ -993,30 +971,20 @@ void *nvmem_cell_read(struct nvmem_cell *cell, size_t *len)
 {
 	struct nvmem_device *nvmem = cell->nvmem;
 	u8 *buf;
-	int rc, i;
-
-	printk("----%s %s\n", __FILE__, __func__);
+	int rc;
 
 	if (!nvmem)
 		return ERR_PTR(-EINVAL);
-
-	printk("----%s %s before kzalloc cell->bytes = %d cell->offset = %x cell->bit_offset = %d cell->nbits = %d\n", __FILE__, __func__, cell->bytes, cell->offset, cell->bit_offset, cell->nbits);
 
 	buf = kzalloc(cell->bytes, GFP_KERNEL);
 	if (!buf)
 		return ERR_PTR(-ENOMEM);
 
-	printk("----%s %s before __nvmem_cell_read\n", __FILE__, __func__);
-
 	rc = __nvmem_cell_read(nvmem, cell, buf, len);
-	printk("----%s %s rc = %d\n", __FILE__, __func__, rc);
 	if (rc) {
 		kfree(buf);
 		return ERR_PTR(rc);
 	}
-
-	for (i = 0; i < *len; ++i)
-		printk("----%s %s buf = %x\n", __FILE__, __func__, buf[i]);
 
 	return buf;
 }

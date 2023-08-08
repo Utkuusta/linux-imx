@@ -636,7 +636,7 @@ static int imx_ocotp_probe(struct platform_device *pdev)
 
 	nvmem = devm_nvmem_register(dev, &imx_ocotp_nvmem_config);
 
-	dev_err(dev, "---- imx-ocotp is probed...\n");
+	dev_err(dev, "imx-ocotp is probed...\n");
 
 	return PTR_ERR_OR_ZERO(nvmem);
 }

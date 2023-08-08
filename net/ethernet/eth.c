@@ -581,30 +581,20 @@ int nvmem_get_mac_address(struct device *dev, void *addrbuf)
 	const unsigned char *mac;
 	unsigned char macaddr[ETH_ALEN];
 	size_t len;
-	int i = 0, j;
-
-	printk("----%s %s\n", __FILE__, __func__);
+	int i = 0;
 
 	cell = nvmem_cell_get(dev, "mac-address");
 	if (IS_ERR(cell))
 		return PTR_ERR(cell);
 
 	mac = nvmem_cell_read(cell, &len);
-	printk("----%s %s mac = %x len = %d\n", __FILE__, __func__, *mac, len);
-
 	nvmem_cell_put(cell);
-
-	printk("----%s %s before if (IS_ERR(mac))\n", __FILE__, __func__);
 
 	if (IS_ERR(mac))
 		return PTR_ERR(mac);
 
-	printk("----%s %s before if (len != ETH_ALEN)\n", __FILE__, __func__);
-
 	if (len != ETH_ALEN)
 		goto invalid_addr;
-
-	printk("----%s %s before f (dev->of_node\n", __FILE__, __func__);
 
 	if (dev->of_node &&
 	    of_property_read_bool(dev->of_node, "nvmem_macaddr_swap")) {
@@ -614,22 +604,11 @@ int nvmem_get_mac_address(struct device *dev, void *addrbuf)
 		ether_addr_copy(macaddr, mac);
 	}
 
-	for (j = 0; j < ETH_ALEN; ++j)
-		printk("----%s %s mac[%d] = %x\n", __FILE__, __func__, j, mac[j]);
-
-	for (j = 0; j < ETH_ALEN; ++j)
-		printk("----%s %s macaddr[%d] = %x\n", __FILE__, __func__, j,macaddr[j]);
-
-
 	if (!is_valid_ether_addr(macaddr))
 		goto invalid_addr;
 
-	printk("----%s %s before ether_addr_copy\n", __FILE__, __func__);
-
 	ether_addr_copy(addrbuf, macaddr);
 	kfree(mac);
-
-	printk("----%s %s before return 0\n", __FILE__, __func__);
 
 	return 0;
 
