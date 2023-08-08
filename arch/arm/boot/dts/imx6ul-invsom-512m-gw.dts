@@ -139,6 +139,11 @@
 	phy-reset-active-high;
 	phy-mode = "rmii";
 	phy-handle = <&ethphy0>;
+	
+	nvmem-cells = <&fec_mac_address>;
+	nvmem-cell-names = "mac-address";
+	nvmem_macaddr_swap;
+	
 	status = "okay";
 	mdio {
 		#address-cells = <1>;
