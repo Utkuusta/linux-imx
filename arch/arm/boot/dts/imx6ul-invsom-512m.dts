@@ -363,7 +363,7 @@
 	/*pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_wdog>;
 	fsl,ext-reset-output;*/
-	status = "okay";
+	status = "disabled";
 };
 
 &snvs_poweroff {
@@ -507,7 +507,7 @@
             
 		>;
 	};
-
+		
 	pinctrl_i2c1: i2c1grp {
 		fsl,pins = <
 			MX6UL_PAD_UART4_TX_DATA__I2C1_SCL 0x4001b8b0
