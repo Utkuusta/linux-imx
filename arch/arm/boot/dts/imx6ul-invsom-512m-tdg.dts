@@ -155,7 +155,7 @@
 	clko {
 		compatible = "inv-imx6ul-clko";
 		status = "okay";
-	}
+	};
 };
 
 &clks {
