@@ -27,8 +27,14 @@ enum {
 	HW_ALGO_LEVEL,
 };
 
+enum {
+	DISABLE_EXT_WDT,
+	ENABLE_EXT_WDT,
+};
+
 struct gpio_wdt_priv {
 	struct gpio_desc	*gpiod;
+	struct gpio_desc 	*wd_en;
 	bool			state;
 	bool			always_running;
 	unsigned int		hw_algo;
@@ -69,6 +75,8 @@ static int gpio_wdt_start(struct watchdog_device *wdd)
 {
 	struct gpio_wdt_priv *priv = watchdog_get_drvdata(wdd);
 
+	gpiod_direction_output(priv->wd_en, ENABLE_EXT_WDT);
+
 	priv->state = 0;
 	gpiod_direction_output(priv->gpiod, priv->state);
 
@@ -80,6 +88,8 @@ static int gpio_wdt_start(struct watchdog_device *wdd)
 static int gpio_wdt_stop(struct watchdog_device *wdd)
 {
 	struct gpio_wdt_priv *priv = watchdog_get_drvdata(wdd);
+
+	gpiod_direction_output(priv->wd_en, DISABLE_EXT_WDT);
 
 	if (!priv->always_running) {
 		gpio_wdt_disable(priv);
@@ -136,6 +146,10 @@ static int gpio_wdt_probe(struct platform_device *pdev)
 	if (IS_ERR(priv->gpiod))
 		return PTR_ERR(priv->gpiod);
 
+	priv->wd_en = devm_gpiod_get(dev, "wd-en", GPIOD_OUT_LOW);
+	if (IS_ERR(priv->wd_en))
+		return PTR_ERR(priv->wd_en);
+
 	ret = of_property_read_u32(np,
 				   "hw_margin_ms", &hw_margin);
 	if (ret)
@@ -163,6 +177,8 @@ static int gpio_wdt_probe(struct platform_device *pdev)
 
 	if (priv->always_running)
 		gpio_wdt_start(&priv->wdd);
+
+	dev_err(&pdev->dev, "gpio_wdt driver is probed.\n");
 
 	return devm_watchdog_register_device(dev, &priv->wdd);
 }
