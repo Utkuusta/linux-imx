@@ -149,11 +149,17 @@
 		// echo-active-ms = <100>;
 
 		compatible = "pps-gpio";
-		status = "okay";
+		status = "disabled"; // to be enabled when new gpio pin is
+		                     // decided.
 	};
 
 	clko {
-		compatible = "inv-imx6ul-clko";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_clko_pps>;
+
+		pps-gpio = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+
+		compatible = "inv,imx6ulclko";
 		status = "okay";
 	};
 };
@@ -458,6 +464,12 @@
 	pinctrl-0 = <&pinctrl_hog_1>;
 
 	pinctrl_pps: ppsgrp {
+		fsl,pins = <
+			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x1b0b1
+		>;
+	};
+
+	pinctrl_clko_pps: ppsgrp {
 		fsl,pins = <
 			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x1b0b1
 		>;
