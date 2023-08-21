@@ -69,8 +69,8 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mm-evk.dtb imx8mm-evk-rpmsg.dtb imx8mm-evk-rm67191
 			  imx8mm-evk-root.dtb imx8mm-evk-inmate.dtb imx8mm-evk-revb-qca-wifi.dtb \
 			  imx8mm-evk-ecspi-slave.dtb \
 			  imx8mm-evk-pcie-ep.dtb \
-			  imx8mm-evk-usd-wifi.dtb \
-			  imx8mm-evk-qca-wifi.dtb \
+			  imx8mm-evk-usd-wifi.dtb imx8mm-evk-usd-m2.dtb \
+			  imx8mm-evk-usd-m2-oob.dtb imx8mm-evk-usd-m2-2ea.dtb \
 			  imx8mm-evk-dpdk.dtb \
 			  imx8mm-evk-rm67199.dtb imx8mm-evk-rm67191-cmd-ram.dtb imx8mm-evk-rm67199-cmd-ram.dtb \
 			  imx8mm-evk-lk.dtb imx8mm-evk-rpmsg-wm8524-lpv.dtb
@@ -96,7 +96,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mm-icore-mx8mm-edimm2.2.dtb
 dtb-$(CONFIG_ARCH_MXC) += imx8mm-nitrogen-r2.dtb
 dtb-$(CONFIG_ARCH_MXC) += imx8mn-bsh-smm-s2.dtb
 dtb-$(CONFIG_ARCH_MXC) += imx8mn-bsh-smm-s2pro.dtb
-dtb-$(CONFIG_ARCH_MXC) += imx8mn-evk.dtb imx8mn-evk-rm67191.dtb imx8mn-evk-rm67199.dtb \
+dtb-$(CONFIG_ARCH_MXC) += imx8mn-evk.dtb imx8mn-evk-usd-m2.dtb imx8mn-evk-usd-m2-oob.dtb \
 			  imx8mn-evk-rm67191-cmd-ram.dtb imx8mn-evk-rm67199-cmd-ram.dtb \
 			  imx8mn-evk-rpmsg.dtb imx8mn-evk-8mic-revE.dtb \
 			  imx8mn-evk-8mic-swpdm.dtb imx8mn-evk-usd-wifi.dtb
