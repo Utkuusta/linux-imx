@@ -153,13 +153,16 @@
 		                     // decided.
 	};
 
-	clko {
+	imx6ulepit {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_clko_pps>;
+		pinctrl-0 = <&pinctrl_pps>;
+		clocks = <&clks IMX6UL_CLK_EPIT2>;
 
 		pps-gpio = <&gpio3 5 GPIO_ACTIVE_HIGH>;
 
-		compatible = "inv,imx6ulclko";
+		epit-handle = <&epit2>;
+
+		compatible = "inv,imx6ulepit";
 		status = "okay";
 	};
 };
@@ -466,12 +469,7 @@
 	pinctrl_pps: ppsgrp {
 		fsl,pins = <
 			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x1b0b1
-		>;
-	};
-
-	pinctrl_clko_pps: ppsgrp {
-		fsl,pins = <
-			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x1b0b1
+			MX6UL_PAD_JTAG_TDO__EPIT2_OUT		0x17059
 		>;
 	};
 
@@ -703,7 +701,7 @@
 	pinctrl_sai2: sai2grp {
 		fsl,pins = <
 			MX6UL_PAD_JTAG_TDI__SAI2_TX_BCLK	0x17088
-			MX6UL_PAD_JTAG_TDO__SAI2_TX_SYNC	0x17088
+			// MX6UL_PAD_JTAG_TDO__SAI2_TX_SYNC	0x17088
 			MX6UL_PAD_JTAG_TRST_B__SAI2_TX_DATA	0x11088
 			MX6UL_PAD_JTAG_TCK__SAI2_RX_DATA	0x11088
 			MX6UL_PAD_JTAG_TMS__SAI2_MCLK		0x4001b031
