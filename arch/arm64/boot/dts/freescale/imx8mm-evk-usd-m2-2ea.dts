@@ -1,0 +1,24 @@
+#include "imx8mm-evk-usd-m2.dts"
+
+
+/* Delete clashes from included DT */
+/ {
+	/delete-node/ modem-reset;
+};
+
+&uart3 {
+	/delete-property/ resets;
+};
+
+
+/* Delete clashes from included DT */
+
+&uart3 {
+  	/* For 2EA - Bluetooth */
+  	bluetooth {
+	        compatible = "infineon,cyw55572-bt";
+	        shutdown-gpios = <&gpio5 12 GPIO_ACTIVE_HIGH>;
+	        max-speed = <3000000>;
+	        brcm,requires-autobaud-mode;
+	};
+};
