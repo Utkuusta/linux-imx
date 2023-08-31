@@ -167,6 +167,25 @@
 	};
 };
 
+&ecspi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi1>;
+	status = "okay";
+	cs-gpios = <&gpio4 26 GPIO_ACTIVE_HIGH>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	accelerometer@0 {
+		status = "okay";
+		compatible = "adi,adxl355";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <11 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "DRDY";
+	};
+};
+
 &clks {
 	assigned-clocks = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
 	assigned-clock-rates = <786432000>;
@@ -470,6 +489,16 @@
 		fsl,pins = <
 			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x1b0b1
 			MX6UL_PAD_JTAG_TDO__EPIT2_OUT		0x17059
+			MX6UL_PAD_JTAG_TMS__GPIO1_IO11		0x1b0b1
+		>;
+	};
+
+	pinctrl_ecspi1: ecspi1grp {
+		fsl,pins = <
+			MX6UL_PAD_CSI_DATA05__GPIO4_IO26	0x000010B0
+			MX6UL_PAD_CSI_DATA04__ECSPI1_SCLK	0x000010B0
+			MX6UL_PAD_CSI_DATA07__ECSPI1_MISO	0x000010B0
+			MX6UL_PAD_CSI_DATA06__ECSPI1_MOSI	0x000010B0
 		>;
 	};
 
@@ -704,7 +733,7 @@
 			// MX6UL_PAD_JTAG_TDO__SAI2_TX_SYNC	0x17088
 			MX6UL_PAD_JTAG_TRST_B__SAI2_TX_DATA	0x11088
 			MX6UL_PAD_JTAG_TCK__SAI2_RX_DATA	0x11088
-			MX6UL_PAD_JTAG_TMS__SAI2_MCLK		0x4001b031
+			// MX6UL_PAD_JTAG_TMS__SAI2_MCLK		0x4001b031
 		>;
 	};
 
@@ -730,10 +759,10 @@
                 MX6UL_PAD_LCD_DATA17__LCDIF_DATA17         0x79
                 MX6UL_PAD_LCD_DATA18__LCDIF_DATA18         0x79
                 MX6UL_PAD_LCD_DATA19__LCDIF_DATA19         0x79
-                MX6UL_PAD_LCD_DATA20__LCDIF_DATA20         0x79
-                MX6UL_PAD_LCD_DATA21__LCDIF_DATA21         0x79
-                MX6UL_PAD_LCD_DATA22__LCDIF_DATA22         0x79
-                MX6UL_PAD_LCD_DATA23__LCDIF_DATA23         0x79
+                // MX6UL_PAD_LCD_DATA20__LCDIF_DATA20         0x79
+                // MX6UL_PAD_LCD_DATA21__LCDIF_DATA21         0x79
+                // MX6UL_PAD_LCD_DATA22__LCDIF_DATA22         0x79
+                // MX6UL_PAD_LCD_DATA23__LCDIF_DATA23         0x79
 		>;
 	};
 
