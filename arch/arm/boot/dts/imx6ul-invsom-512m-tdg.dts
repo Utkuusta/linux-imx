@@ -183,6 +183,8 @@
 		interrupt-parent = <&gpio1>;
 		interrupts = <11 IRQ_TYPE_EDGE_RISING>;
 		interrupt-names = "DRDY";
+		ext-clk = <1>;  // Max: 1
+		ext-sync = <0>; // Max: 3
 	};
 };
 
