@@ -734,6 +734,24 @@ int adxl355_core_probe(struct device *dev, struct regmap *regmap,
 	indio_dev->num_channels = ARRAY_SIZE(adxl355_channels);
 	indio_dev->available_scan_masks = adxl355_avail_scan_masks;
 
+	ret = of_property_read_u32(dev->of_node, "ext-clk", &ext_clk);
+	if (ret == 0) {
+		ret = regmap_read(data->regmap, ADXL355_SYNC_REG, &regval);
+		regval &= ~0b100; // Clear previous value.
+		regval |= (ext_clk & 1) << 2; // Set new value.
+		regmap_write(data->regmap, ADXL355_SYNC_REG, regval);
+		dev_info(dev, "adxl355 4 ext-clk set to: %u\n", ext_clk);
+	}
+
+	ret = of_property_read_u32(dev->of_node, "ext-sync", &ext_sync);
+	if (ret == 0) {
+		ret = regmap_read(data->regmap, ADXL355_SYNC_REG, &regval);
+		regval &= ~0b11; // Clear previous value.
+		regval |= (ext_sync & 3); // Set new value.
+		regmap_write(data->regmap, ADXL355_SYNC_REG, regval);
+		dev_info(dev, "adxl355 ext-sync set to: %u\n", ext_sync);
+	}
+
 	ret = adxl355_setup(data);
 	if (ret) {
 		dev_err(dev, "ADXL355 setup failed\n");
@@ -753,24 +771,6 @@ int adxl355_core_probe(struct device *dev, struct regmap *regmap,
 		ret = adxl355_probe_trigger(indio_dev, irq);
 		if (ret)
 			return ret;
-	}
-
-	ret = of_property_read_u32(dev->of_node, "ext-clk", &ext_clk);
-	if (ret == 0) {
-		ret = regmap_read(data->regmap, ADXL355_SYNC_REG, &regval);
-		regval &= ~0b100; // Clear previous value.
-		regval |= (ext_clk & 1) << 2; // Set new value.
-		regmap_write(data->regmap, ADXL355_SYNC_REG, regval);
-		dev_info(dev, "adxl355 ext-clk set to: %u\n", ext_clk);
-	}
-
-	ret = of_property_read_u32(dev->of_node, "ext-sync", &ext_sync);
-	if (ret == 0) {
-		ret = regmap_read(data->regmap, ADXL355_SYNC_REG, &regval);
-		regval &= ~0b11; // Clear previous value.
-		regval |= (ext_sync & 3); // Set new value.
-		regmap_write(data->regmap, ADXL355_SYNC_REG, regval);
-		dev_info(dev, "adxl355 ext-sync set to: %u\n", ext_sync);
 	}
 
 	return devm_iio_device_register(dev, indio_dev);
