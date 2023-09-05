@@ -195,7 +195,7 @@ static int pps_gpio_probe(struct platform_device *pdev)
 	}
 
 	/* register PPS source */
-	pps_default_params = PPS_CAPTUREASSERT | PPS_OFFSETASSERT;
+	pps_default_params = PPS_CAPTUREASSERT | PPS_OFFSETASSERT | PPS_ECHOASSERT;
 	if (data->capture_clear)
 		pps_default_params |= PPS_CAPTURECLEAR | PPS_OFFSETCLEAR;
 	data->pps = pps_register_source(&data->info, pps_default_params);
