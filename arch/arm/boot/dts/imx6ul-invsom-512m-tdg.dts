@@ -143,10 +143,9 @@
 		pinctrl-0 = <&pinctrl_pps>;
 
 		gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
-		assert-falling-edge;
 
-		// echo-gpios = <&gpio1 27 GPIO_ACTIVE_HIGH>;
-		// echo-active-ms = <100>;
+		echo-gpios = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+		echo-active-ms = <200>;
 
 		compatible = "pps-gpio";
 		status = "disabled"; // to be enabled when new gpio pin is
@@ -492,6 +491,7 @@
 			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x1b0b1
 			MX6UL_PAD_JTAG_TDO__EPIT2_OUT		0x17059
 			MX6UL_PAD_JTAG_TMS__GPIO1_IO11		0x1b0b1
+			MX6UL_PAD_LCD_DATA01__GPIO3_IO06	0x000010B0
 		>;
 	};
 
@@ -742,7 +742,7 @@
 	pinctrl_lcdif_dat: lcdifdatgrp {
 		fsl,pins = <
                 MX6UL_PAD_LCD_DATA00__LCDIF_DATA00         0x79
-                MX6UL_PAD_LCD_DATA01__LCDIF_DATA01         0x79
+                // MX6UL_PAD_LCD_DATA01__LCDIF_DATA01         0x79
                 MX6UL_PAD_LCD_DATA02__LCDIF_DATA02         0x79
                 MX6UL_PAD_LCD_DATA03__LCDIF_DATA03         0x79
                 MX6UL_PAD_LCD_DATA04__LCDIF_DATA04         0x79
