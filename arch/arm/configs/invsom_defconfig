@@ -4262,6 +4262,9 @@ CONFIG_R8188EU=m
 #
 # Accelerometers
 #
+CONFIG_ADXL355=y
+# CONFIG_ADXL355_I2C is not set
+CONFIG_ADXL355_SPI=y
 # CONFIG_ADIS16203 is not set
 # CONFIG_ADIS16240 is not set
 # end of Accelerometers
