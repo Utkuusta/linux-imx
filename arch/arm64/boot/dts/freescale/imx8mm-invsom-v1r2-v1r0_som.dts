@@ -682,6 +682,25 @@
 		};
 	};
 
+	ov5645_mipi: ov5645_mipi@3c {
+		compatible = "ovti,ov5645_mipi";
+		reg = <0x3c>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi_pwn>, <&pinctrl_csi_rst>;
+		csi_id = <0>;
+		pwn-gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>;
+		rst-gpios = <&gpio4 3 GPIO_ACTIVE_LOW>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+		ae_target = <52>;
+		status = "okay";		
+		port {
+			ov5645_mipi1_ep: endpoint {
+				remote-endpoint = <&mipi1_sensor_ep>;
+			};
+		};
+	};
+
 	adc: tla2022@49 {
 		compatible = "ti,tla2022";
 		reg = <0x49>;
@@ -701,25 +720,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
-
-	ov5645_mipi: ov5645_mipi@3c {
-		compatible = "ovti,ov5645_mipi";
-		reg = <0x3c>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_csi_pwn>, <&pinctrl_csi_rst>;
-		csi_id = <0>;
-		pwn-gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>;
-		rst-gpios = <&gpio4 3 GPIO_ACTIVE_LOW>;
-		mclk = <24000000>;
-		mclk_source = <0>;
-		ae_target = <52>;
-		status = "okay";		
-		port {
-			ov5645_mipi1_ep: endpoint {
-				remote-endpoint = <&mipi1_sensor_ep>;
-			};
-		};
-	};
 };
 
 &iomuxc {
