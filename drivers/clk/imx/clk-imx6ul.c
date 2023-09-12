@@ -477,6 +477,7 @@ static void __init imx6ul_clocks_init(struct device_node *ccm_node)
 
 	// CLKO2 will be used for TDG project as the clock output. It will use
 	// SAI2 as the source.
+	clk_set_parent(hws[IMX6UL_CLK_SAI2_SEL]->clk, hws[IMX6UL_CLK_PLL4_AUDIO_DIV]->clk);
 	clk_set_parent(hws[IMX6UL_CLK_CKO2_SEL]->clk, hws[IMX6UL_CLK_SAI2]->clk);
 
 	/*

@@ -201,7 +201,7 @@
 
 &clks {
 	assigned-clocks = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
-	assigned-clock-rates = <786432000>;
+	assigned-clock-rates = <1048576000>;
 };
 
 &fec1 {
@@ -234,7 +234,7 @@
 	#clock-cells = <0>;
 	assigned-clocks = <&clks IMX6UL_CLK_SAI2_SEL>,
 			<&clks IMX6UL_CLK_SAI2>;
-	assigned-clock-rates = <0>, <11851852>;
+	assigned-clock-rates = <0>, <1024000>;
 	fsl,sai-mclk-direction-output;
 	/* fsl,txmasterflag = <1>;
 	fsl,rxmasterflag = <1>; */
