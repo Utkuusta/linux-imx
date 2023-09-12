@@ -475,6 +475,10 @@ static void __init imx6ul_clocks_init(struct device_node *ccm_node)
 
 	of_clk_add_hw_provider(np, of_clk_hw_onecell_get, clk_hw_data);
 
+	// CLKO2 will be used for TDG project as the clock output. It will use
+	// SAI2 as the source.
+	clk_set_parent(hws[IMX6UL_CLK_CKO2_SEL]->clk, hws[IMX6UL_CLK_SAI2]->clk);
+
 	/*
 	 * Lower the AHB clock rate before changing the parent clock source,
 	 * as AHB clock rate can NOT be higher than 133MHz, but its parent
