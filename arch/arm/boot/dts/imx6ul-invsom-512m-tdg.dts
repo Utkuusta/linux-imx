@@ -135,7 +135,7 @@
 			"Headphone Jack", "HP_OUT",
 			"Ext Spk", "LINE_OUT";
 		fsl,no-audmux;
-		status = "okay";
+		status = "disabled";
 	};
 
 	pps {
@@ -169,9 +169,19 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_clko>;
 
-		clocks = <&clks IMX6UL_CLK_CKO2>;
+		clocks = <&clks IMX6UL_CLK_CKO2>,
+			 <&clks IMX6UL_CLK_SAI2>,
+			 <&clks IMX6UL_CLK_PLL4_AUDIO>;
+		clock-names = "clko", "parent", "pll";
 
-		source = "19";
+		assigned-clocks = <&clks IMX6UL_CLK_CKO2_SEL>,
+				  <&clks IMX6UL_CLK_SAI2_SEL>,
+				  <&clks IMX6UL_CLK_CKO2>,
+				  <&clks IMX6UL_CLK_SAI2>,
+				  <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
+		assigned-clock-rates = <0>, <0>, <1024000>, <1024000>, <1048576000>;
+		assigned-clock-parents = <&clks IMX6UL_CLK_SAI2>,
+					 <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
 
 		compatible = "inv,imx6ulclko";
 		status = "okay";
@@ -200,8 +210,8 @@
 };
 
 &clks {
-	assigned-clocks = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
-	assigned-clock-rates = <786432000>;
+	// assigned-clocks = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
+	// assigned-clock-rates = <1048576000>;
 };
 
 &fec1 {
@@ -234,7 +244,7 @@
 	#clock-cells = <0>;
 	assigned-clocks = <&clks IMX6UL_CLK_SAI2_SEL>,
 			<&clks IMX6UL_CLK_SAI2>;
-	assigned-clock-rates = <0>, <11851852>;
+	assigned-clock-rates = <0>, <1024000>;
 	fsl,sai-mclk-direction-output;
 	/* fsl,txmasterflag = <1>;
 	fsl,rxmasterflag = <1>; */
@@ -302,7 +312,7 @@
 		/* clocks = <&clks IMX6UL_CLK_SAI2>;
 		clock-names = "mclk"; */
 		clocks = <&sai2>;
-		status = "okay";
+		status = "disabled";
 	};
 	
 	eeprom: eeprom@50 {
