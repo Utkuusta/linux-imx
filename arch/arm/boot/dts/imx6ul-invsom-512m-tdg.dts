@@ -142,14 +142,13 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_pps>;
 
-		gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio3 10 GPIO_ACTIVE_HIGH>;
 
-		echo-gpios = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+		echo-gpios = <&gpio3 8 GPIO_ACTIVE_HIGH>;
 		echo-active-ms = <200>;
 
 		compatible = "pps-gpio";
-		status = "disabled"; // to be enabled when new gpio pin is
-		                     // decided.
+		status = "okay";
 	};
 
 	imx6ulepit {
@@ -510,8 +509,8 @@
 
 	pinctrl_pps: ppsgrp {
 		fsl,pins = <
-			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x0001B0B1
-			MX6UL_PAD_LCD_DATA01__GPIO3_IO06	0x000010B0
+			MX6UL_PAD_LCD_DATA05__GPIO3_IO10	0x000070A1
+			MX6UL_PAD_LCD_DATA03__GPIO3_IO08	0x0000B0B1
 		>;
 	};
 
@@ -778,9 +777,9 @@
                 MX6UL_PAD_LCD_DATA00__LCDIF_DATA00         0x79
                 // MX6UL_PAD_LCD_DATA01__LCDIF_DATA01         0x79
                 MX6UL_PAD_LCD_DATA02__LCDIF_DATA02         0x79
-                MX6UL_PAD_LCD_DATA03__LCDIF_DATA03         0x79
+                // MX6UL_PAD_LCD_DATA03__LCDIF_DATA03         0x79
                 MX6UL_PAD_LCD_DATA04__LCDIF_DATA04         0x79
-                MX6UL_PAD_LCD_DATA05__LCDIF_DATA05         0x79
+                // MX6UL_PAD_LCD_DATA05__LCDIF_DATA05         0x79
                 MX6UL_PAD_LCD_DATA06__LCDIF_DATA06         0x79
                 MX6UL_PAD_LCD_DATA07__LCDIF_DATA07         0x79
                 MX6UL_PAD_LCD_DATA08__LCDIF_DATA08         0x79
