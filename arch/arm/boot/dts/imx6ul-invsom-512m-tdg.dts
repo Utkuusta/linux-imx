@@ -142,7 +142,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_pps>;
 
-		gpios = <&gpio3 10 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
 
 		echo-gpios = <&gpio3 8 GPIO_ACTIVE_HIGH>;
 		echo-active-ms = <200>;
@@ -156,7 +156,7 @@
 		pinctrl-0 = <&pinctrl_epit>;
 		clocks = <&clks IMX6UL_CLK_EPIT1>;
 
-		pps-gpio = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+		pps-gpio = <&gpio3 3 GPIO_ACTIVE_HIGH>;
 
 		epit-handle = <&epit1>;
 
@@ -187,6 +187,16 @@
 	};
 };
 
+&snvs_rtc {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_adc1>;
+	status = "okay";
+};
+
 &ecspi1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi1>;
@@ -199,7 +209,7 @@
 		status = "okay";
 		compatible = "adi,adxl355";
 		reg = <0>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <10000000>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <13 IRQ_TYPE_EDGE_RISING>;
 		interrupt-names = "DRDY";
@@ -324,7 +334,7 @@
 &pwm2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm2>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pxp {
@@ -510,13 +520,14 @@
 	pinctrl_pps: ppsgrp {
 		fsl,pins = <
 			MX6UL_PAD_LCD_DATA05__GPIO3_IO10	0x000010B0
-			MX6UL_PAD_LCD_DATA03__GPIO3_IO08	0x000010B0
+			MX6UL_PAD_LCD_HSYNC__GPIO3_IO02		0x000010B0
 		>;
 	};
 
 	pinctrl_epit: epitgrp {
 		fsl,pins = <
-			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x000010B0
+			MX6UL_PAD_LCD_VSYNC__GPIO3_IO03		0x000010B0
+			MX6UL_PAD_JTAG_TMS__GPIO1_IO11		0x000010B0
 			MX6UL_PAD_JTAG_TMS__EPIT1_OUT		0x000010B0
 		>;
 	};
@@ -534,6 +545,13 @@
 			MX6UL_PAD_CSI_DATA07__ECSPI1_MISO	0x000010B0
 			MX6UL_PAD_CSI_DATA06__ECSPI1_MOSI	0x000010B0
 			MX6UL_PAD_JTAG_TDI__GPIO1_IO13		0x000010B0 /* epit out as drdy*/
+			MX6UL_PAD_LCD_DATA01__GPIO3_IO06	0x000010B0
+		>;
+	};
+
+	pinctrl_adc1: adc1grp {
+		fsl,pins = <
+			MX6UL_PAD_GPIO1_IO09__GPIO1_IO09	0xb0
 		>;
 	};
 
@@ -805,10 +823,10 @@
 		fsl,pins = <
             MX6UL_PAD_LCD_CLK__LCDIF_CLK               0x79
             MX6UL_PAD_LCD_ENABLE__LCDIF_ENABLE         0x79
-            MX6UL_PAD_LCD_HSYNC__LCDIF_HSYNC           0x79
+        //     MX6UL_PAD_LCD_HSYNC__LCDIF_HSYNC           0x79
             /*MX6UL_PAD_LCD_RESET__LCDIF_RESET           0x79
             MX6UL_PAD_LCD_RESET__GPIO3_IO04			   0x79*/
-            MX6UL_PAD_LCD_VSYNC__LCDIF_VSYNC           0x79
+        //     MX6UL_PAD_LCD_VSYNC__LCDIF_VSYNC           0x79
 		>;
 	};
 			
