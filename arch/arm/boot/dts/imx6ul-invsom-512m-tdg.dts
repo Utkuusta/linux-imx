@@ -135,35 +135,66 @@
 			"Headphone Jack", "HP_OUT",
 			"Ext Spk", "LINE_OUT";
 		fsl,no-audmux;
-		status = "okay";
+		status = "disabled";
 	};
 
 	pps {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_pps>;
 
-		gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
 
-		echo-gpios = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+		echo-gpios = <&gpio3 8 GPIO_ACTIVE_HIGH>;
 		echo-active-ms = <200>;
 
 		compatible = "pps-gpio";
-		status = "disabled"; // to be enabled when new gpio pin is
-		                     // decided.
+		status = "okay";
 	};
 
 	imx6ulepit {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_pps>;
-		clocks = <&clks IMX6UL_CLK_EPIT2>;
+		pinctrl-0 = <&pinctrl_epit>;
+		clocks = <&clks IMX6UL_CLK_EPIT1>;
 
-		pps-gpio = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+		pps-gpio = <&gpio3 3 GPIO_ACTIVE_HIGH>;
 
-		epit-handle = <&epit2>;
+		epit-handle = <&epit1>;
 
 		compatible = "inv,imx6ulepit";
 		status = "okay";
 	};
+
+	imx6ulclko {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_clko>;
+
+		clocks = <&clks IMX6UL_CLK_CKO2>,
+			 <&clks IMX6UL_CLK_SAI2>,
+			 <&clks IMX6UL_CLK_PLL4_AUDIO>;
+		clock-names = "clko", "parent", "pll";
+
+		assigned-clocks = <&clks IMX6UL_CLK_CKO2_SEL>,
+				  <&clks IMX6UL_CLK_SAI2_SEL>,
+				  <&clks IMX6UL_CLK_CKO2>,
+				  <&clks IMX6UL_CLK_SAI2>,
+				  <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
+		assigned-clock-rates = <0>, <0>, <1024000>, <1024000>, <1048576000>;
+		assigned-clock-parents = <&clks IMX6UL_CLK_SAI2>,
+					 <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
+
+		compatible = "inv,imx6ulclko";
+		status = "okay";
+	};
+};
+
+&snvs_rtc {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_adc1>;
+	status = "okay";
 };
 
 &ecspi1 {
@@ -178,18 +209,18 @@
 		status = "okay";
 		compatible = "adi,adxl355";
 		reg = <0>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <10000000>;
 		interrupt-parent = <&gpio1>;
-		interrupts = <11 IRQ_TYPE_EDGE_RISING>;
+		interrupts = <13 IRQ_TYPE_EDGE_RISING>;
 		interrupt-names = "DRDY";
 		ext-clk = <1>;  // Max: 1
-		ext-sync = <0>; // Max: 3
+		ext-sync = <1>; // Max: 2
 	};
 };
 
 &clks {
-	assigned-clocks = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
-	assigned-clock-rates = <786432000>;
+	// assigned-clocks = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
+	// assigned-clock-rates = <1048576000>;
 };
 
 &fec1 {
@@ -222,7 +253,7 @@
 	#clock-cells = <0>;
 	assigned-clocks = <&clks IMX6UL_CLK_SAI2_SEL>,
 			<&clks IMX6UL_CLK_SAI2>;
-	assigned-clock-rates = <0>, <11851852>;
+	assigned-clock-rates = <0>, <1024000>;
 	fsl,sai-mclk-direction-output;
 	/* fsl,txmasterflag = <1>;
 	fsl,rxmasterflag = <1>; */
@@ -290,7 +321,7 @@
 		/* clocks = <&clks IMX6UL_CLK_SAI2>;
 		clock-names = "mclk"; */
 		clocks = <&sai2>;
-		status = "okay";
+		status = "disabled";
 	};
 	
 	eeprom: eeprom@50 {
@@ -303,7 +334,7 @@
 &pwm2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm2>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pxp {
@@ -488,19 +519,39 @@
 
 	pinctrl_pps: ppsgrp {
 		fsl,pins = <
-			MX6UL_PAD_LCD_DATA00__GPIO3_IO05	0x1b0b1
-			MX6UL_PAD_JTAG_TDO__EPIT2_OUT		0x0000B0B1
-			MX6UL_PAD_LCD_DATA01__GPIO3_IO06	0x000010B0
+			MX6UL_PAD_LCD_DATA05__GPIO3_IO10	0x000010B0
+			MX6UL_PAD_LCD_HSYNC__GPIO3_IO02		0x000010B0
+		>;
+	};
+
+	pinctrl_epit: epitgrp {
+		fsl,pins = <
+			MX6UL_PAD_LCD_VSYNC__GPIO3_IO03		0x000010B0
+			MX6UL_PAD_JTAG_TMS__GPIO1_IO11		0x000010B0
+			MX6UL_PAD_JTAG_TMS__EPIT1_OUT		0x000010B0
+		>;
+	};
+
+	pinctrl_clko: clkogrp {
+		fsl,pins = <
+			MX6UL_PAD_JTAG_TDO__CCM_CLKO2		0x000010B0
 		>;
 	};
 
 	pinctrl_ecspi1: ecspi1grp {
 		fsl,pins = <
-			MX6UL_PAD_JTAG_TMS__GPIO1_IO11		0x000070A1
 			MX6UL_PAD_CSI_DATA05__GPIO4_IO26	0x000010B0
 			MX6UL_PAD_CSI_DATA04__ECSPI1_SCLK	0x000010B0
 			MX6UL_PAD_CSI_DATA07__ECSPI1_MISO	0x000010B0
 			MX6UL_PAD_CSI_DATA06__ECSPI1_MOSI	0x000010B0
+			MX6UL_PAD_JTAG_TDI__GPIO1_IO13		0x000010B0 /* epit out as drdy*/
+			MX6UL_PAD_LCD_DATA01__GPIO3_IO06	0x000010B0
+		>;
+	};
+
+	pinctrl_adc1: adc1grp {
+		fsl,pins = <
+			MX6UL_PAD_GPIO1_IO09__GPIO1_IO09	0xb0
 		>;
 	};
 
@@ -731,7 +782,7 @@
 
 	pinctrl_sai2: sai2grp {
 		fsl,pins = <
-			MX6UL_PAD_JTAG_TDI__SAI2_TX_BCLK	0x17088
+			// MX6UL_PAD_JTAG_TDI__SAI2_TX_BCLK	0x17088
 			// MX6UL_PAD_JTAG_TDO__SAI2_TX_SYNC	0x17088
 			MX6UL_PAD_JTAG_TRST_B__SAI2_TX_DATA	0x11088
 			MX6UL_PAD_JTAG_TCK__SAI2_RX_DATA	0x11088
@@ -741,12 +792,12 @@
 
 	pinctrl_lcdif_dat: lcdifdatgrp {
 		fsl,pins = <
-                MX6UL_PAD_LCD_DATA00__LCDIF_DATA00         0x79
+                //MX6UL_PAD_LCD_DATA00__LCDIF_DATA00         0x79
                 // MX6UL_PAD_LCD_DATA01__LCDIF_DATA01         0x79
                 MX6UL_PAD_LCD_DATA02__LCDIF_DATA02         0x79
-                MX6UL_PAD_LCD_DATA03__LCDIF_DATA03         0x79
+                // MX6UL_PAD_LCD_DATA03__LCDIF_DATA03         0x79
                 MX6UL_PAD_LCD_DATA04__LCDIF_DATA04         0x79
-                MX6UL_PAD_LCD_DATA05__LCDIF_DATA05         0x79
+                // MX6UL_PAD_LCD_DATA05__LCDIF_DATA05         0x79
                 MX6UL_PAD_LCD_DATA06__LCDIF_DATA06         0x79
                 MX6UL_PAD_LCD_DATA07__LCDIF_DATA07         0x79
                 MX6UL_PAD_LCD_DATA08__LCDIF_DATA08         0x79
@@ -772,10 +823,10 @@
 		fsl,pins = <
             MX6UL_PAD_LCD_CLK__LCDIF_CLK               0x79
             MX6UL_PAD_LCD_ENABLE__LCDIF_ENABLE         0x79
-            MX6UL_PAD_LCD_HSYNC__LCDIF_HSYNC           0x79
+        //     MX6UL_PAD_LCD_HSYNC__LCDIF_HSYNC           0x79
             /*MX6UL_PAD_LCD_RESET__LCDIF_RESET           0x79
             MX6UL_PAD_LCD_RESET__GPIO3_IO04			   0x79*/
-            MX6UL_PAD_LCD_VSYNC__LCDIF_VSYNC           0x79
+        //     MX6UL_PAD_LCD_VSYNC__LCDIF_VSYNC           0x79
 		>;
 	};
 			
