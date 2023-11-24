@@ -2093,6 +2093,8 @@ static int flexcan_probe(struct platform_device *pdev)
 		}
 	}
 
+	dev_err(&pdev->dev, "flexcan driver probed.\n");
+
 	return 0;
 
  failed_register:
