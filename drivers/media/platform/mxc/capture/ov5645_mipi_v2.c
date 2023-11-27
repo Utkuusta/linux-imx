@@ -2190,7 +2190,7 @@ static struct regulator *gpo_regulator;
 
 static int ov5645_probe(struct i2c_client *adapter,
 				const struct i2c_device_id *device_id);
-static int ov5645_remove(struct i2c_client *client);
+static void ov5645_remove(struct i2c_client *client);
 
 static s32 ov5645_read_reg(u16 reg, u8 *val);
 static s32 ov5645_write_reg(u16 reg, u8 val);
@@ -2422,7 +2422,7 @@ static void ov5645_lock_af(void)
 	} while (temp != 0x10 && cnt-- > 0);
 
 	if (temp != 0x10)
-		pr_warning("%s: Failed to enable AF\n", __func__);
+		pr_warn("%s: Failed to enable AF\n", __func__);
 }
 
 static int prev_sysclk, prev_HTS;
@@ -2767,7 +2767,7 @@ static void ov5645_dnld_af_fw(void)
 	} while (temp != 0x70 && --cnt > 0);
 
 	if (temp != 0x70)
-		pr_warning("%s: Failed to download AF firmware\n", __func__);
+		pr_warn("%s: Failed to download AF firmware\n", __func__);
 }
 
 /* sensor changes between scaling and subsampling
@@ -3191,7 +3191,7 @@ static int ov5645_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *a)
 }
 
 static int ov5645_set_fmt(struct v4l2_subdev *sd,
-			struct v4l2_subdev_pad_config *cfg,
+		    struct v4l2_subdev_state *sd_state,
 			struct v4l2_subdev_format *format)
 {
 	struct v4l2_mbus_framefmt *mf = &format->format;
@@ -3226,7 +3226,7 @@ static int ov5645_set_fmt(struct v4l2_subdev *sd,
 
 
 static int ov5645_get_fmt(struct v4l2_subdev *sd,
-			  struct v4l2_subdev_pad_config *cfg,
+		      struct v4l2_subdev_state *sd_state,
 			  struct v4l2_subdev_format *format)
 {
 	struct v4l2_mbus_framefmt *mf = &format->format;
@@ -3248,7 +3248,7 @@ static int ov5645_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int ov5645_enum_mbus_code(struct v4l2_subdev *sd,
-				 struct v4l2_subdev_pad_config *cfg,
+		         struct v4l2_subdev_state *sd_state,
 				 struct v4l2_subdev_mbus_code_enum *code)
 {
 	if (code->pad || code->index >= ARRAY_SIZE(ov5645_colour_fmts))
@@ -3267,7 +3267,7 @@ static int ov5645_enum_mbus_code(struct v4l2_subdev *sd,
  * Return 0 if successful, otherwise -EINVAL.
  */
 static int ov5645_enum_framesizes(struct v4l2_subdev *sd,
-			       struct v4l2_subdev_pad_config *cfg,
+		           struct v4l2_subdev_state *sd_state,
 			       struct v4l2_subdev_frame_size_enum *fse)
 {
 	if (fse->index > ov5645_mode_MAX)
@@ -3298,7 +3298,7 @@ static int ov5645_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
  * Return 0 if successful, otherwise -EINVAL.
  */
 static int ov5645_enum_frameintervals(struct v4l2_subdev *sd,
-		struct v4l2_subdev_pad_config *cfg,
+		struct v4l2_subdev_state *sd_state,
 		struct v4l2_subdev_frame_interval_enum *fie)
 {
 	int i, j, count = 0;
@@ -3308,7 +3308,7 @@ static int ov5645_enum_frameintervals(struct v4l2_subdev *sd,
 
 	if (fie->width == 0 || fie->height == 0 ||
 	    fie->code == 0) {
-		pr_warning("Please assign pixel format, width and height.\n");
+		pr_warn("Please assign pixel format, width and height.\n");
 		return -EINVAL;
 	}
 
@@ -3445,7 +3445,7 @@ static int ov5645_set_regs(const char *buffer, const struct kernel_param *kp)
 		if (cnt != 1)
 			break;
 
-		pr_warning("%s: Writing Reg = %04x, val = %02x\n", __func__,
+		pr_warn("%s: Writing Reg = %04x, val = %02x\n", __func__,
 			(unsigned int)reg_addr, (unsigned int)value);
 		retval = ov5645_write_reg(reg_addr & 0xffff, value & 0xff);
 
@@ -3498,7 +3498,7 @@ static int ov5645_set_af_mode(const char *buffer, const struct kernel_param *kp)
 		ov5645_enable_cont_af();
 		break;
 	default:
-		pr_warning("%s: Incorrect value written to sysfs node\n", __func__);
+		pr_warn("%s: Incorrect value written to sysfs node\n", __func__);
 	}
 
 	return 0;
@@ -3637,13 +3637,13 @@ static int ov5645_probe(struct i2c_client *client,
 
 	retval = ov5645_read_reg(OV5645_CHIP_ID_HIGH_BYTE, &chip_id_high);
 	if (retval < 0 || chip_id_high != 0x56) {
-		pr_warning("camera ov5645_mipi is not found\n");
+		pr_warn("camera ov5645_mipi is not found\n");
 		//clk_disable_unprepare(ov5645_data.sensor_clk);
 		return -ENODEV;
 	}
 	retval = ov5645_read_reg(OV5645_CHIP_ID_LOW_BYTE, &chip_id_low);
 	if (retval < 0 || chip_id_low != 0x45) {
-		pr_warning("camera ov5645_mipi is not found\n");
+		pr_warn("camera ov5645_mipi is not found\n");
 		//clk_disable_unprepare(ov5645_data.sensor_clk);
 		return -ENODEV;
 	}
@@ -3651,7 +3651,7 @@ static int ov5645_probe(struct i2c_client *client,
 	retval = init_device();
 	if (retval < 0) {
 		//clk_disable_unprepare(ov5645_data.sensor_clk);
-		pr_warning("camera ov5645 init failed\n");
+		pr_warn("camera ov5645 init failed\n");
 		ov5645_power_down(1);
 		return retval;
 	}
@@ -3676,7 +3676,7 @@ static int ov5645_probe(struct i2c_client *client,
  * @param client            struct i2c_client *
  * @return  Error code indicating success or failure
  */
-static int ov5645_remove(struct i2c_client *client)
+static void ov5645_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 
@@ -3697,8 +3697,6 @@ static int ov5645_remove(struct i2c_client *client)
 
 	if (io_regulator)
 		regulator_disable(io_regulator);
-
-	return 0;
 }
 
 module_i2c_driver(ov5645_i2c_driver);
