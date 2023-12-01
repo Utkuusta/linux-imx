@@ -1098,6 +1098,10 @@
 				cpu_speed_grade: speed-grade@10 {
 					reg = <0x10 4>;
 				};
+				
+				fec_mac_address: mac-address@620 {
+					reg = <0x88 0x6>;
+				};			
 			};
 
 			csi: csi@21c4000 {
