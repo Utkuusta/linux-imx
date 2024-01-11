@@ -47,8 +47,8 @@
 &uart1 { /* bluetooth */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart1>;
-	/* uart-has-rtscts;
-	 fsl,dte-mode; 
+	uart-has-rtscts;
+	/*fsl,dte-mode; 
 	resets = <&modem_reset>; */
 	status = "okay";
 };
