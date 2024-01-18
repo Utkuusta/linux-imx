@@ -37,13 +37,14 @@
 		};
 	};
 
-	backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pwm7 0 5000000>;
-		pwm-names = "lcdbacklight";
-		brightness-levels = <0 4 8 16 32 64 128 250>;
-		default-brightness-level = <6>;
-		status = "disabled";
+	watchdog: watchdog {
+		compatible = "linux,wdt-gpio";
+		pinctrl-0 = <&pinctrl_wd_en>;
+		gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		wd-en-gpio = <&gpio2 12 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <800>;
+		always-running;
 	};
 	
 	inveventhandler {
@@ -60,17 +61,7 @@
 		compatible = "fsl,imx6ul-pxp-v4l2", "fsl,imx6sx-pxp-v4l2", "fsl,imx6sl-pxp-v4l2";
 		status = "okay";
 	};
-
-	reg_sd1_vmmc: sd1_regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "VSD_3V3";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
-		off-on-delay = <20000>;
-		enable-active-high;
-	};
-
+	
 	reg_can_3v3: regulator@0 {
 		compatible = "regulator-fixed";
 		reg = <0>;
@@ -139,6 +130,11 @@
 	phy-reset-active-high;
 	phy-mode = "rmii";
 	phy-handle = <&ethphy0>;
+	
+	nvmem-cells = <&fec_mac_address>;
+	nvmem-cell-names = "mac-address";
+	nvmem_macaddr_swap;
+	
 	status = "okay";
 	mdio {
 		#address-cells = <1>;
@@ -237,31 +233,23 @@
 	tx-d-cal = <0x5>;
 };
 
-&usdhc1 {
+&usdhc1 { // WIFI/BT
 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
 	pinctrl-0 = <&pinctrl_usdhc1>;
 	pinctrl-1 = <&pinctrl_usdhc1_100mhz>;
 	pinctrl-2 = <&pinctrl_usdhc1_200mhz>;
 	keep-power-in-suspend;
 	wakeup-source;
-	vmmc-supply = <&reg_sd1_vmmc>;
 	status = "okay";
 };
 
-&usdhc2 {
+&usdhc2 { // EMMC
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc2>;
 	keep-power-in-suspend;
 	non-removable;
 	bus-width = <8>;
 	status = "okay";
-};
-
-&wdog1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_wdog>;
-	fsl,ext-reset-output;
-	status = "disabled";
 };
 
 &snvs_poweroff {
@@ -292,7 +280,7 @@
 			MX6UL_PAD_CSI_DATA00__GPIO4_IO21			0x000010B0 // DI1
 			MX6UL_PAD_ENET2_TX_CLK__GPIO2_IO14			0x000010B0 // Leksan BTN
 			MX6UL_PAD_ENET2_TX_EN__GPIO2_IO13			0x000010B0 // Leksan LED
-			MX6UL_PAD_ENET2_TX_DATA1__GPIO2_IO12		0x000010B0 // Watchdog IC enable
+			//MX6UL_PAD_GPIO1_IO09__GPIO1_IO09			0x000010B0 // WDI (watchdog input) istenilen sinyale gore PWM2 olarak da kullanilabilir?
 			MX6UL_PAD_ENET2_RX_ER__GPIO2_IO15			0x000010B0 // CTP_INT
 			MX6UL_PAD_JTAG_TCK__GPIO1_IO14				0x000010B0 // CTP_RESET
 			MX6UL_PAD_UART3_RTS_B__GPIO1_IO27			0x000010B0 // GPS_ANT_SUPPLY_ONOFF
@@ -300,8 +288,8 @@
 			MX6UL_PAD_JTAG_TDO__GPIO1_IO12				0x000010B0 // USB_HOST_PWR
 			MX6UL_PAD_JTAG_TDI__GPIO1_IO13				0x000010B0 // CAN_STBY
 			
-			MX6UL_PAD_UART1_RTS_B__GPIO1_IO19 0x1b0b1 /* input */
-			MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x1b0b1 /* output */
+			//MX6UL_PAD_UART1_RTS_B__GPIO1_IO19 0x1b0b1 /* input */
+			//MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x1b0b1 /* output */
 		>;
 	};
 	
@@ -359,8 +347,8 @@
 			MX6UL_PAD_UART5_RX_DATA__I2C2_SDA 0x4001F0B1
 		>;
 	};
-
-	pinctrl_pwm7: pwm2grp {
+	
+	pinctrl_pwm7: pwm7grp {
 		fsl,pins = <
             MX6UL_PAD_CSI_VSYNC__PWM7_OUT             0x110b0 
 		>;
@@ -376,8 +364,8 @@
 		
 			MX6UL_PAD_UART1_TX_DATA__UART1_DCE_TX 0x1b0b1
 			MX6UL_PAD_UART1_RX_DATA__UART1_DCE_RX 0x1b0b1
-			/*MX6UL_PAD_UART1_RTS_B__UART1_DCE_RTS 0x1b0b1
-			MX6UL_PAD_UART1_CTS_B__UART1_DCE_CTS 0x1b0b1*/
+			MX6UL_PAD_UART1_RTS_B__UART1_DCE_RTS 0x1b0b1
+			MX6UL_PAD_UART1_CTS_B__UART1_DCE_CTS 0x1b0b1
 			
 		>;
 	};
@@ -411,7 +399,7 @@
 		>;
 	};
 
-	pinctrl_uart7: uart6grp {
+	pinctrl_uart7: uart7grp {
 		fsl,pins = <
 			MX6UL_PAD_ENET2_RX_EN__UART7_DCE_TX 0x1b0b1
 			MX6UL_PAD_ENET2_TX_DATA0__UART7_DCE_RX 0x1b0b1
@@ -474,10 +462,10 @@
 			MX6UL_PAD_NAND_ALE__USDHC2_RESET_B  0xb0b1
 		>;
 	};
-			
-	pinctrl_wdog: wdoggrp {
+		
+	pinctrl_wd_en: wd_engrp {
 		fsl,pins = <
-			MX6UL_PAD_GPIO1_IO09__WDOG1_WDOG_ANY    0x30b0
+			MX6UL_PAD_ENET2_TX_DATA1__GPIO2_IO12		0x000010B0 // WD_EN
 		>;
 	};
 };

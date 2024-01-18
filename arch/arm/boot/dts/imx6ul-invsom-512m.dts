@@ -88,10 +88,9 @@
 		regulator-name = "can-3v3";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpios = <&enable_latch 0 GPIO_ACTIVE_HIGH>;
+		gpios = <&enable_latch 0 GPIO_ACTIVE_LOW>;
 	  	regulator-always-on;
 		off-on-delay = <20>;
-		enable-active-high;
 	};
 	
 	reg_gpio_dvfs: regulator-gpio {
