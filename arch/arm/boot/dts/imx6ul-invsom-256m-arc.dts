@@ -183,6 +183,24 @@
 	status = "okay";
 };
 
+&i2c1 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c1>;
+	status = "okay";
+
+	touchscreen@5d { // TODO: i2c1 or i2c2?
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ts>;
+		interrupt-parent = <&gpio1>; // TODO: select new pin
+		interrupts = <9 IRQ_TYPE_EDGE_FALLING>; // TODO: select new pin
+		irq-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>; // TODO: select new pin
+		reset-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>; // TODO: select new pin
+	};
+};
+
 &i2c2 {
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
@@ -465,6 +483,14 @@
 &iomuxc {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hog_1>;
+
+	pinctrl_ts: tsgrp {
+		fsl,pins = <
+			// TODO: select pins for this.
+			// MX6QDL_PAD_GPIO_9__GPIO1_IO09 0x1b0b0
+			// MX6QDL_PAD_EIM_A25__GPIO5_IO02 0x1b0b0
+		>;
+	};
 
 	pinctrl_ecspi1: ecspi1grp {
 		fsl,pins = <
