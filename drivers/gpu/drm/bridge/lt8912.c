@@ -18,7 +18,7 @@
 #include <video/videomode.h>
 #include <linux/media-bus-format.h>
 
-//#include <drm/drmP.h>
+// #include <drm/drmP.h>
 #include <drm/drm_of.h>
 #include <drm/drm_atomic.h>
 #include <drm/drm_atomic_helper.h>
@@ -294,6 +294,69 @@ lt8912_connector_best_encoder(struct drm_connector *connector)
 	return lt->bridge.encoder;
 }
 
+/**
+ * Updates EDID data if resolution is not standard.
+ */
+static void update_edid(struct drm_connector *connector, struct edid *edid)
+{
+	u32 horizontal, vertical;
+	int i, tim_i;
+	u8 csum, *raw_edid, non_standard_f;
+
+	// Check every detailed timing and update clock if non-standard.
+	non_standard_f = 0;
+	for (tim_i = 0; tim_i < 4; tim_i++) {
+		// Parse raw EDID data.
+		horizontal =
+		edid->detailed_timings[tim_i].data.pixel_data.hactive_lo
+		+ ((edid->detailed_timings[tim_i].data.pixel_data
+		    .hactive_hblank_hi & 0b11110000) << 4);
+
+		vertical =
+		edid->detailed_timings[tim_i].data.pixel_data.vactive_lo
+		+ ((edid->detailed_timings[tim_i].data.pixel_data
+		    .vactive_vblank_hi & 0b11110000) << 4);
+
+		// If resolution is standard, don't do anything.
+		if (horizontal == 0 || vertical == 0) {
+			continue;
+		} else if (horizontal == 640 && vertical == 480) {
+			continue;
+		} else if (horizontal == 720 && vertical == 480) {
+			continue;
+		} else if (horizontal == 720 && vertical == 576) {
+			continue;
+		} else if (horizontal == 800 && vertical == 600) {
+			continue;
+		} else if (horizontal == 1280 && vertical == 720) {
+			continue;
+		} else if (horizontal == 1920 && vertical == 1080) {
+			continue;
+		}
+
+		// Update pixel clock on non-standard timing.
+		edid->detailed_timings[tim_i].pixel_clock = 7425;
+
+		non_standard_f = 1;
+	}
+
+	// If any of the clocks didn't get updated, no need for updating
+	// checksum.
+	if (!non_standard_f)
+		return;
+
+	// Get checksum.
+	csum = 0;
+	raw_edid = (u8 *)edid;
+	for (i = 0; i < sizeof(struct edid) - 1; i++) {
+		csum += raw_edid[i];
+	}
+
+	// Sum of every 128 byte should be 0 (mod 256).
+	csum = 0x100 - csum;
+	edid->checksum = csum;
+}
+
 static int lt8912_connector_get_modes(struct drm_connector *connector)
 {
 	struct lt8912 *lt = connector_to_lt8912(connector);
@@ -306,6 +369,7 @@ static int lt8912_connector_get_modes(struct drm_connector *connector)
 	if (lt->ddc) {
 		edid = drm_get_edid(connector, lt->ddc);
 		if (edid) {
+			update_edid(connector, edid);
 			drm_connector_update_edid_property(connector,
 								edid);
 			num_modes = drm_add_edid_modes(connector, edid);
@@ -410,7 +474,8 @@ static void lt8912_bridge_mode_set(struct drm_bridge *bridge,
 	drm_mode_copy(&lt->mode, adj);
 }
 
-static int lt8912_bridge_attach(struct drm_bridge *bridge, enum drm_bridge_attach_flags flags)
+static int lt8912_bridge_attach(struct drm_bridge *bridge,
+				enum drm_bridge_attach_flags flags)
 {
 	struct lt8912 *lt = bridge_to_lt8912(bridge);
 	struct drm_connector *connector = &lt->connector;
@@ -663,7 +728,6 @@ static void lt8912_remove(struct i2c_client *i2c)
 	mipi_dsi_detach(lt->dsi);
 	drm_bridge_remove(&lt->bridge);
 	of_node_put(lt->host_node);
-
 }
 
 static const struct i2c_device_id lt8912_i2c_ids[] = {
