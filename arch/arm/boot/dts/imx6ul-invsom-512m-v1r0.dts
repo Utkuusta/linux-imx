@@ -306,7 +306,7 @@
 &usbotg1 {
 	dr_mode = "host";
 	disable-over-current;
-	status = okay";
+	status = "okay";
 };
 
 /* mfgtool icin USBOTG1 otg olmalı.UART3 ile pinler cakistigindan mfg icin build yapilacaksa UART3 disabled edilmeli.*/
