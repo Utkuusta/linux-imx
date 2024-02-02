@@ -43,7 +43,7 @@
 		pwm-names = "lcdbacklight";
 		brightness-levels = <0 4 8 16 32 64 128 250>;
 		default-brightness-level = <6>;
-		status = "okay";
+		status = "disabled";
 	};
 	
 	inveventhandler {
