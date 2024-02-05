@@ -49,6 +49,7 @@
 		spi3 = &ecspi4;
 		usbphy0 = &usbphy1;
 		usbphy1 = &usbphy2;
+		adc1 = &adc1;
 	};
 
 	cpus {
