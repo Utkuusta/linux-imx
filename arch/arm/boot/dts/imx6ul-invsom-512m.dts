@@ -422,7 +422,7 @@
 			timing0: timing0 {
 				clock-frequency = <9216000>;
 				hactive = <480>;
-				vactive = <272>;3v3_regulator>
+				vactive = <272>;
 				hfront-porch = <8>;
 				hback-porch = <43>;
 				hsync-len = <53>;
