@@ -525,11 +525,11 @@ static const struct iio_chan_spec_ext_info vf610_ext_info[] = {
 }
 
 static const struct iio_chan_spec vf610_adc_iio_channels[] = {
-	VF610_ADC_CHAN(0, IIO_VOLTAGE),
 	VF610_ADC_CHAN(1, IIO_VOLTAGE),
+	VF610_ADC_CHAN(4, IIO_VOLTAGE),
+	VF610_ADC_CHAN(0, IIO_VOLTAGE),
 	VF610_ADC_CHAN(2, IIO_VOLTAGE),
 	VF610_ADC_CHAN(3, IIO_VOLTAGE),
-	VF610_ADC_CHAN(4, IIO_VOLTAGE),
 	VF610_ADC_CHAN(5, IIO_VOLTAGE),
 	VF610_ADC_CHAN(6, IIO_VOLTAGE),
 	VF610_ADC_CHAN(7, IIO_VOLTAGE),
