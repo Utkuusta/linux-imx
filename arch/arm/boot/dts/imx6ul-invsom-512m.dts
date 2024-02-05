@@ -422,7 +422,7 @@
 			timing0: timing0 {
 				clock-frequency = <9216000>;
 				hactive = <480>;
-				vactive = <272>;
+				vactive = <272>;3v3_regulator>
 				hfront-porch = <8>;
 				hback-porch = <43>;
 				hsync-len = <53>;
@@ -441,7 +441,7 @@
 &adc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_adc1>;
-	vref-supply = <&touch_3v3_regulator>;
+	vref-supply = <&reg_vref_3v3>;
 	num-channels = <10>;
 	status = "okay";
 };
