@@ -423,7 +423,7 @@
 				clock-frequency = <9216000>;
 				hactive = <480>;
 				vactive = <272>;3v3_regulator>
-				hfront-porch = <8>;&reg_vref_3v3
+				hfront-porch = <8>;
 				hback-porch = <43>;
 				hsync-len = <53>;
 				vback-porch = <12>;
