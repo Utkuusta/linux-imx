@@ -43,7 +43,7 @@
 		pwm-names = "lcdbacklight";
 		brightness-levels = <0 4 8 16 32 64 128 250>;
 		default-brightness-level = <6>;
-		status = "disabled";
+		status = "okay";
 	};
 	
 	inveventhandler {
@@ -438,6 +438,14 @@
 	};
 };
 
+&adc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_adc1>;
+	vref-supply = <&touch_3v3_regulator>;
+	num-channels = <10>;
+	status = "okay";
+};
+
 &iomuxc {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hog_1>;
@@ -722,6 +730,14 @@
 			MX6UL_PAD_GPIO1_IO09__WDOG1_WDOG_ANY    0x30b0
 		>;
 	};
+
+	pinctrl_adc1: adc1grp {
+		fsl,pins = <
+			MX6UL_PAD_GPIO1_IO01__GPIO1_IO01 0xb0
+			MX6UL_PAD_GPIO1_IO04__GPIO1_IO04 0xb0
+		>;
+	};
+
 };
 
 #include "imx6ul-invsom-btwifi.dtsi"
