@@ -455,6 +455,7 @@
             MX6UL_PAD_GPIO1_IO03__GPIO1_IO03            0x000010B0	/* ENET1_nINT */
 			/* MX6UL_PAD_GPIO1_IO04__GPIO1_IO04			0x000010B0  output: wifi modul 1:acik */
 			MX6UL_PAD_GPIO1_IO08__GPIO1_IO08			0x000010B0 /* gsm power 500ms 1 then 0: on */
+			MX6UL_PAD_GPIO1_IO05__GPIO1_IO05			0x000010B0 /* empty gpio test */
 			
 			MX6UL_PAD_UART1_RTS_B__GPIO1_IO19 0x1b0b1 /* input */
 			MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x1b0b1 /* output */
