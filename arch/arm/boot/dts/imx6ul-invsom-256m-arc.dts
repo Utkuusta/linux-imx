@@ -249,6 +249,16 @@
 		focaltech,irq-gpio = <&enable_latch 5 0x01>;
 		focaltech,max-touch-number = <5>;
 		focaltech,display-coords =  <0 0 480 272>;
+		status = "disabled";
+	};
+	
+	ts_goodix: touchscreen@5d {
+		compatible = "goodix,gt911";
+		esd-recovery-timeout-ms = <2000>;
+		interrupts-extended = <&enable_latch 5 IRQ_TYPE_LEVEL_HIGH>;
+		irq-gpios = <&enable_latch 5 GPIO_ACTIVE_HIGH>;
+		reg = <0x5d>;
+		reset-gpios = <&enable_latch 4 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 	
@@ -442,15 +452,15 @@
 			native-mode = <&timing0>;
 
 			timing0: timing0 {
-				clock-frequency = <29500000>;
+				clock-frequency = <33300000>;
 				hactive = <800>;
 				vactive = <480>;
-				hfront-porch = <24>;
-				hback-porch = <96>;
-				hsync-len = <72>;
-				vback-porch = <10>;
-				vfront-porch = <3>;
-				vsync-len = <7>;
+				hfront-porch = <210>;
+				hback-porch = <46>;
+				hsync-len = <20>;
+				vback-porch = <23>;
+				vfront-porch = <22>;
+				vsync-len = <10>;
 				hsync-active = <0>;
 				vsync-active = <0>;
 				de-active = <1>;
