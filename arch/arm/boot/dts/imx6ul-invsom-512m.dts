@@ -151,6 +151,11 @@
 	phy-reset-active-high;
 	phy-mode = "rmii";
 	phy-handle = <&ethphy0>;
+	
+	nvmem-cells = <&fec_mac_address>;
+	nvmem-cell-names = "mac-address";
+	nvmem_macaddr_swap;
+				
 	status = "okay";
 	mdio {
 		#address-cells = <1>;
@@ -375,9 +380,16 @@
 
 &can1 {
 	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan0>;
+	xceiver-supply = <&reg_can_3v3>;
+	status = "okay";
+};
+
+&can2 {
+	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexcan1>;
 	xceiver-supply = <&reg_can_3v3>;
-	status = "disabled";
+	status = "okay";
 };
 
 &sim2 {
@@ -433,6 +445,14 @@
 	};
 };
 
+&adc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_adc1>;
+	vref-supply = <&reg_vref_3v3>;
+	num-channels = <1>;
+	status = "okay";
+};
+
 &iomuxc {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hog_1>;
@@ -442,6 +462,7 @@
             MX6UL_PAD_GPIO1_IO03__GPIO1_IO03            0x000010B0	/* ENET1_nINT */
 			/* MX6UL_PAD_GPIO1_IO04__GPIO1_IO04			0x000010B0  output: wifi modul 1:acik */
 			MX6UL_PAD_GPIO1_IO08__GPIO1_IO08			0x000010B0 /* gsm power 500ms 1 then 0: on */
+			MX6UL_PAD_GPIO1_IO05__GPIO1_IO05			0x000010B0 /* empty gpio test */
 			
 			MX6UL_PAD_UART1_RTS_B__GPIO1_IO19 0x1b0b1 /* input */
 			MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x1b0b1 /* output */
@@ -469,10 +490,17 @@
 		>;
 	};
 	
-	pinctrl_flexcan1: flexcan1grp{
+	pinctrl_flexcan0: flexcan0grp{
 		fsl,pins = <
 			MX6UL_PAD_UART3_RTS_B__FLEXCAN1_RX	0x1b020
 			MX6UL_PAD_UART3_CTS_B__FLEXCAN1_TX	0x1b020
+		>;
+	};
+
+	pinctrl_flexcan1: flexcan1grp{
+		fsl,pins = <
+			MX6UL_PAD_UART2_RTS_B__FLEXCAN2_RX	0x1b020
+			MX6UL_PAD_UART2_CTS_B__FLEXCAN2_TX	0x1b020
 		>;
 	};
 	
@@ -506,7 +534,7 @@
             
 		>;
 	};
-		
+
 	pinctrl_i2c1: i2c1grp {
 		fsl,pins = <
 			MX6UL_PAD_UART4_TX_DATA__I2C1_SCL 0x4001b8b0
@@ -578,7 +606,7 @@
 		fsl,pins = <
 			MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX	0x1b0b1
 			MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX	0x1b0b1
-			MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS	0x1b0b1
+			/* MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS	0x1b0b1 */
 		>;
 	};
 		
@@ -717,6 +745,13 @@
 			MX6UL_PAD_GPIO1_IO09__WDOG1_WDOG_ANY    0x30b0
 		>;
 	};
+
+	pinctrl_adc1: adc1grp {
+		fsl,pins = <
+			MX6UL_PAD_GPIO1_IO01__GPIO1_IO01 0xb0
+		>;
+	};
+
 };
 
 #include "imx6ul-invsom-btwifi.dtsi"
