@@ -453,17 +453,18 @@
 	status = "okay";
 };
 
-&ecspi1 {
-    fsl,spi-num-chipselects=<1>;
-    cs-gpios = <0>;
-    pinctrl-names = "default";
-    pinctrl-0 = <&pinctrl_ecspi1>;
-    status = "okay";
-    spidev@0x00 {
-        compatible = "spidev";
-        spi-max-frequency = <20000000>;
-        reg = <0>;
-    };
+&ecspi2 {
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio4 22 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi2_1>;
+	status = "okay";
+
+	spidev@0 {
+               compatible = "spidev";
+               spi-max-frequency = <12000000>;
+               reg = <0>;
+        };
 };
 
 
@@ -766,14 +767,14 @@
 		>;
 	};
 
-	pinctrl_ecspi1: ecspi1grp {
-  		fsl,pins = <
-			MX6UL_PAD_CSI_DATA06__ECSPI1_MOSI    0x1b0b1
-			MX6UL_PAD_CSI_DATA07__ECSPI1_MISO    0x1b0b1
-			MX6UL_PAD_CSI_DATA04__ECSPI1_SCLK    0x1b0b1
-			MX6UL_PAD_CSI_DATA05__ECSPI1_SS0    0x1b0b1
-  		>;
-  	};
+	pinctrl_ecspi1_1: ecspi1grp {
+		fsl,pins = <
+			MX6UL_PAD_CSI_DATA07__ECSPI1_MISO       0x100b1
+			MX6UL_PAD_CSI_DATA06__ECSPI1_MOSI       0x100b1
+			MX6UL_PAD_CSI_DATA04__ECSPI1_SCLK       0x100b1
+			MX6UL_PAD_CSI_DATA05__GPIO4_IO26        0x100b1
+		>;
+	};
 
 };
 
