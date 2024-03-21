@@ -223,8 +223,6 @@
 		interrupts = <2 2>;
 	};
 
-	
-
 	focaltech@38{ 
 		compatible = "focaltech,fts";
 		reg = <0x38>;  /* 7 bit addr */
@@ -256,13 +254,6 @@
         reg = <0x50>;
         status = "okay";
     };
-};
-
-&i2c3 {
-	clock-frequency = <100000>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c3>;
-	status = "okay";
 };
 
 &pwm2 {
@@ -469,7 +460,7 @@
     pinctrl-0 = <&pinctrl_ecspi1>;
     status = "okay";
     spidev@0x00 {
-        compatible = "linux, spidev";
+        compatible = "rohm, dh2228fv";
         spi-max-frequency = <20000000>;
         reg = <0>;
     };
@@ -569,13 +560,6 @@
 		fsl,pins = <
 			MX6UL_PAD_UART5_TX_DATA__I2C2_SCL 0x4001F0B1
 			MX6UL_PAD_UART5_RX_DATA__I2C2_SDA 0x4001F0B1
-		>;
-	};
-
-	pinctrl_i2c3: i2c3grp {
-		fsl,pins = <
-			MX6UL_PAD_UART6_TX_DATA__I2C3_SCL 0x4001F0B1
-			MX6UL_PAD_UART6_RX_DATA__I2C3_SDA 0x4001F0B1
 		>;
 	};
 	
