@@ -455,11 +455,11 @@
 
 &ecspi1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi4>;
+	pinctrl-0 = <&pinctrl_ecspi1>;
 	fsl,spi-num-chipselects=<1>;
 	status = "okay";
 	cs-gpios = <0>;
-	
+
 	spidev0: spi@0 {
 		reg = <0>;
 		compatible = "rohm,dh2228fv";
