@@ -454,13 +454,13 @@
 };
 
 &ecspi1 {
-    fsl,spi-num-chipselects=<1>;
-    cs-gpios = <0>;
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_ecspi1>;
+    fsl,spi-num-chipselects=<1>;
     status = "okay";
-    spidev@0x00 {
-        compatible = "rohm, dh2228fv";
+    cs-gpios = <0>;
+    spidev0 : spi@0 {
+        compatible = "rohm,dh2228fv";
         spi-max-frequency = <20000000>;
         reg = <0>;
     };
