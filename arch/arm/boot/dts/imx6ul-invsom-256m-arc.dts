@@ -382,7 +382,7 @@
 	cs-gpios = <
 		&gpio4 22 GPIO_ACTIVE_LOW /* MX6UL_PAD_CSI_DATA01__GPIO4_IO22 */
 		&gpio3 4 GPIO_ACTIVE_LOW /* MX6UL_PAD_LCD_RESET__GPIO3_IO04 */
-	>;	 
+	>;
 			
 	 mcp251xfd: can@0 {
 		 compatible = "microchip,mcp251xfd";
@@ -391,7 +391,7 @@
 		 pinctrl-0 = <&pinctrl_can_irq>;
 		 reg = <0>;
 		 interrupts-extended = <&gpio5 9 IRQ_TYPE_LEVEL_LOW>;
-		 spi-max-frequency = <10000000>;
+		 spi-max-frequency = <20000000>;
 		 status = "okay";
 	 };
  
@@ -402,7 +402,7 @@
 		 pinctrl-names = "default";
 		 pinctrl-0 = <&pinctrl_mfrc>;
 		 reg = <0x01>;
-		 spi-max-frequency = <10000000>;
+		 spi-max-frequency = <1000000>;
 		 reset-gpios = <&gpio4 26 GPIO_ACTIVE_LOW>;
 		 //phandle = <0x68>;
 	 };
