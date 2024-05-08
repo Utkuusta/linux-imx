@@ -29,7 +29,7 @@
 	 clk_can: oscillator {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
-		clock-frequency = <20000000>;
+		clock-frequency = <10000000>;
 	 };
  
 	 reserved-memory {
@@ -373,31 +373,38 @@
  };
  
  &ecspi2 {
-	 pinctrl-names = "default";
-	 pinctrl-0 = <&pinctrl_ecspi2>;
-	 status = "okay";
-	 cs-gpios = <&gpio4 26 GPIO_ACTIVE_HIGH>;
-	 #address-cells = <1>;
-	 #size-cells = <0>;
- 
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi2>;
+	status = "okay";
+	num-cs = <2>;
+	cs-gpios = <
+		&gpio4 22 GPIO_ACTIVE_LOW /* MX6UL_PAD_CSI_DATA01__GPIO4_IO22 */
+		&gpio3 4 GPIO_ACTIVE_LOW /* MX6UL_PAD_LCD_RESET__GPIO3_IO04 */
+	>;	 
+			
 	 mcp251xfd: can@0 {
 		 compatible = "microchip,mcp251xfd";
 		 clocks = <&clk_can>;
 		 pinctrl-names = "default";
 		 pinctrl-0 = <&pinctrl_can_irq>;
 		 reg = <0>;
-		 interrupts-extended = <&gpio1 2 IRQ_TYPE_LEVEL_LOW>;
-		 spi-max-frequency = <20000000>;
+		 interrupts-extended = <&gpio5 9 IRQ_TYPE_LEVEL_LOW>;
+		 spi-max-frequency = <10000000>;
 		 status = "okay";
 	 };
  
-	 mfrc522@1 {
-		 compatible = "mfrc522";
-		 reg = <0x01>;
+	 mfrc522: mfrc522@1 {
 		 #address-cells = <0x01>;
 		 #size-cells = <0x00>;
+		 compatible = "mfrc522";
+		 pinctrl-names = "default";
+		 pinctrl-0 = <&pinctrl_mfrc>;
+		 reg = <0x01>;
 		 spi-max-frequency = <10000000>;
-		 phandle = <0x68>;
+		 reset-gpios = <&gpio4 26 GPIO_ACTIVE_LOW>;
+		 //phandle = <0x68>;
 	 };
  };
  
@@ -405,12 +412,30 @@
 	 pinctrl-names = "default";
 	 pinctrl-0 = <&pinctrl_hog_1>;
  
+	 pinctrl_hog_1: hoggrp-1 {
+		 fsl,pins = <
+			/*  MX6UL_PAD_GPIO1_IO03__GPIO1_IO03            0x000010B0	 ENET1_nINT */
+			/*  MX6UL_PAD_GPIO1_IO04__GPIO1_IO04            0x000010B0   output: wifi modul 1:acik */
+			 MX6UL_PAD_GPIO1_IO08__GPIO1_IO08			0x000010B0 /* gsm power 500ms 1 then 0: on */
+			 
+			 //MX6UL_PAD_UART1_RTS_B__GPIO1_IO19 0x1b0b1 /* input */
+			 //MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x1b0b1 /* output */
+		 >;
+	 };
+ 
 	 pinctrl_ts: tsgrp {
 		 fsl,pins = <
 			 MX6UL_PAD_ENET2_RX_ER__GPIO2_IO15 0x1b0b0
 			 MX6UL_PAD_JTAG_TCK__GPIO1_IO14 0x1b0b0
 		 >;
 	 };
+	 
+	 pinctrl_mfrc: mfrcgrp {
+		 fsl,pins = <
+			 MX6UL_PAD_CSI_DATA05__GPIO4_IO26 0x1b0b0
+		 >;
+	 };
+	 
  
 	 pinctrl_ecspi1: ecspi1grp {
 		 fsl,pins = <
@@ -423,7 +448,9 @@
 
 	 pinctrl_ecspi2: ecspi2grp {
 		fsl,pins = <
-			MX6UL_PAD_CSI_DATA01__ECSPI2_SS0	0x000010B0
+			//MX6UL_PAD_CSI_DATA01__ECSPI2_SS0	0x000010B0
+			MX6UL_PAD_CSI_DATA01__GPIO4_IO22	0x000010B0  // can
+			MX6UL_PAD_LCD_RESET__GPIO3_IO04		0x000010B0  // nfc
 			MX6UL_PAD_CSI_DATA00__ECSPI2_SCLK	0x000010B0
 			MX6UL_PAD_CSI_DATA03__ECSPI2_MISO	0x000010B0
 			MX6UL_PAD_CSI_DATA02__ECSPI2_MOSI	0x000010B0
@@ -432,18 +459,7 @@
  
 	 pinctrl_can_irq: cangrp {  // can interrupt
 		 fsl,pins = <
-			 MX6UL_PAD_GPIO1_IO02__GPIO1_IO02	0x000010B0 /* TODO: this is temp, must select a non-used pin afterwards */
-		 >;
-	 };
- 
-	 pinctrl_hog_1: hoggrp-1 {
-		 fsl,pins = <
-			/*  MX6UL_PAD_GPIO1_IO03__GPIO1_IO03            0x000010B0	 ENET1_nINT */
-			/*  MX6UL_PAD_GPIO1_IO04__GPIO1_IO04            0x000010B0   output: wifi modul 1:acik */
-			 MX6UL_PAD_GPIO1_IO08__GPIO1_IO08			0x000010B0 /* gsm power 500ms 1 then 0: on */
-			 
-			 //MX6UL_PAD_UART1_RTS_B__GPIO1_IO19 0x1b0b1 /* input */
-			 //MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x1b0b1 /* output */
+		 	MX6UL_PAD_SNVS_TAMPER9__GPIO5_IO09	0x000010B0
 		 >;
 	 };
 	 
@@ -471,15 +487,6 @@
 			 MX6UL_PAD_SNVS_TAMPER3__GPIO5_IO03	0x79
 		 >;
 	 };
- 
-	 /* pinctrl_ecspi2_1: ecspi2grp-1 {
-		 fsl,pins = <
-			 MX6UL_PAD_UART4_RX_DATA__ECSPI2_SS0        0x000010B0
-			 MX6UL_PAD_UART4_TX_DATA__ECSPI2_SCLK       0x000010B0
-			 MX6UL_PAD_UART5_RX_DATA__ECSPI2_MISO       0x000010B0
-			 MX6UL_PAD_UART5_TX_DATA__ECSPI2_MOSI       0x000010B0
-		 >;
-	 };*/
  
 	 /*pinctrl_enet1: enet1grp {
 		 fsl,pins = <
@@ -647,14 +654,6 @@
 			 MX6UL_PAD_NAND_DATA07__USDHC2_DATA7 0x170b9
 			 MX6UL_PAD_NAND_ALE__USDHC2_RESET_B  0xb0b1
 			 
-			 /*
-			 MX6UL_PAD_CSI_VSYNC__USDHC2_CLK     0x10069
-			 MX6UL_PAD_CSI_HSYNC__USDHC2_CMD     0x17059
-			 MX6UL_PAD_CSI_DATA00__USDHC2_DATA0 0x17059
-			 MX6UL_PAD_CSI_DATA01__USDHC2_DATA1 0x17059
-			 MX6UL_PAD_CSI_DATA02__USDHC2_DATA2 0x17059
-			 MX6UL_PAD_CSI_DATA03__USDHC2_DATA3 0x17059
-			 */
 		 >;
 	 };
  
