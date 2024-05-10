@@ -54,6 +54,27 @@
 		 status = "okay";
 	 };
 	 
+	 rotary-encoder-key {
+		compatible = "gpio-keys";
+
+		rotary-encoder-event {
+			label = "rotary-encoder press";
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_ENTER>;
+			linux,can-disable;
+		};
+	 };
+
+	 rotary-encoder {
+		compatible = "rotary-encoder";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_rotary_encoder>;
+		gpios = <&gpio1 10 GPIO_ACTIVE_LOW>, <&gpio1 11 GPIO_ACTIVE_LOW>;
+		rotary-encoder,relative-axis;
+		rotary-encoder,steps-per-period = <1>;
+		wakeup-source;
+	 };
+	 
 	 /*inveventhandler {
 		 compatible = "inveventdrv";
 		 status = "okay";
