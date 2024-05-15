@@ -447,11 +447,11 @@
 		 >;
 	 };
 	 
-	 /*pinctrl_mfrc: mfrcgrp {
+	 pinctrl_mfrc: mfrcgrp {
 		 fsl,pins = <
 			 MX6UL_PAD_CSI_DATA05__GPIO4_IO26 0x1b0b0
 		 >;
-	 };*/
+	 };
 	 
 	 pinctrl_rotary_encoder: rotarygrp {
 		fsl,pins = <
