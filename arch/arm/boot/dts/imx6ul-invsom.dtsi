@@ -453,7 +453,7 @@
 				clocks = <&clks IMX6UL_CLK_PWM1>,
 					 <&clks IMX6UL_CLK_PWM1>;
 				clock-names = "ipg", "per";
-				#pwm-cells = <3>;
+				#pwm-cells = <2>;
 				status = "disabled";
 			};
 
@@ -464,7 +464,7 @@
 				clocks = <&clks IMX6UL_CLK_PWM2>,
 					 <&clks IMX6UL_CLK_PWM2>;
 				clock-names = "ipg", "per";
-				#pwm-cells = <3>;
+				#pwm-cells = <2>;
 				status = "disabled";
 			};
 
@@ -475,7 +475,7 @@
 				clocks = <&clks IMX6UL_CLK_PWM3>,
 					 <&clks IMX6UL_CLK_PWM3>;
 				clock-names = "ipg", "per";
-				#pwm-cells = <3>;
+				#pwm-cells = <2>;
 				status = "disabled";
 			};
 
@@ -486,7 +486,7 @@
 				clocks = <&clks IMX6UL_CLK_PWM4>,
 					 <&clks IMX6UL_CLK_PWM4>;
 				clock-names = "ipg", "per";
-				#pwm-cells = <3>;
+				#pwm-cells = <2>;
 				status = "disabled";
 			};
 
@@ -497,7 +497,7 @@
 				clocks = <&clks IMX6UL_CLK_CAN1_IPG>,
 					 <&clks IMX6UL_CLK_CAN1_SERIAL>;
 				clock-names = "ipg", "per";
-				fsl,stop-mode = <&gpr 0x10 1>;
+				fsl,stop-mode = <&gpr 0x10 1 0x10 17>;
 				status = "disabled";
 			};
 
@@ -508,7 +508,7 @@
 				clocks = <&clks IMX6UL_CLK_CAN2_IPG>,
 					 <&clks IMX6UL_CLK_CAN2_SERIAL>;
 				clock-names = "ipg", "per";
-				fsl,stop-mode = <&gpr 0x10 2>;
+				fsl,stop-mode = <&gpr 0x10 2 0x10 18>;
 				status = "disabled";
 			};
 
@@ -850,7 +850,7 @@
 				clocks = <&clks IMX6UL_CLK_PWM5>,
 					 <&clks IMX6UL_CLK_PWM5>;
 				clock-names = "ipg", "per";
-				#pwm-cells = <3>;
+				#pwm-cells = <2>;
 				status = "disabled";
 			};
 
@@ -861,7 +861,7 @@
 				clocks = <&clks IMX6UL_CLK_PWM6>,
 					 <&clks IMX6UL_CLK_PWM6>;
 				clock-names = "ipg", "per";
-				#pwm-cells = <3>;
+				#pwm-cells = <2>;
 				status = "disabled";
 			};
 
@@ -872,7 +872,7 @@
 				clocks = <&clks IMX6UL_CLK_PWM7>,
 					 <&clks IMX6UL_CLK_PWM7>;
 				clock-names = "ipg", "per";
-				#pwm-cells = <3>;
+				#pwm-cells = <2>;
 				status = "disabled";
 			};
 
@@ -883,7 +883,7 @@
 				clocks = <&clks IMX6UL_CLK_PWM8>,
 					 <&clks IMX6UL_CLK_PWM8>;
 				clock-names = "ipg", "per";
-				#pwm-cells = <3>;
+				#pwm-cells = <2>;
 				status = "disabled";
 			};
 		};
@@ -1143,7 +1143,7 @@
 			qspi: spi@21e0000 {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				compatible = "fsl,imx6ul-qspi";
+				compatible = "fsl,imx6ul-qspi", "fsl,imx6sx-qspi";
 				reg = <0x021e0000 0x4000>, <0x60000000 0x10000000>;
 				reg-names = "QuadSPI", "QuadSPI-memory";
 				interrupts = <GIC_SPI 107 IRQ_TYPE_LEVEL_HIGH>;

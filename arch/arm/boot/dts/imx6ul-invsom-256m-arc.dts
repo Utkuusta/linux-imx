@@ -54,6 +54,28 @@
 		 status = "okay";
 	 };
 	 
+	 rotary-encoder-key {
+		compatible = "gpio-keys";
+
+		rotary-encoder-event {
+			label = "rotary-encoder press";
+			pinctrl-0 = <&pinctrl_rotary_encoder_key>;
+			gpios = <&gpio5 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_ENTER>;
+			linux,can-disable;
+		};
+	 };
+
+	 rotary-encoder {
+		compatible = "rotary-encoder";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_rotary_encoder>;
+		gpios = <&gpio1 10 GPIO_ACTIVE_LOW>, <&gpio1 11 GPIO_ACTIVE_LOW>;
+		rotary-encoder,relative-axis;
+		rotary-encoder,steps-per-period = <1>;
+		wakeup-source;
+	 };
+	 
 	 /*inveventhandler {
 		 compatible = "inveventdrv";
 		 status = "okay";
@@ -425,12 +447,24 @@
 		 >;
 	 };
 	 
-	 pinctrl_mfrc: mfrcgrp {
+	 /*pinctrl_mfrc: mfrcgrp {
 		 fsl,pins = <
 			 MX6UL_PAD_CSI_DATA05__GPIO4_IO26 0x1b0b0
 		 >;
-	 };
+	 };*/
 	 
+	 pinctrl_rotary_encoder: rotarygrp {
+		fsl,pins = <
+			MX6UL_PAD_JTAG_MOD__GPIO1_IO10 0x1b0b0 // rotary (-)
+			MX6UL_PAD_JTAG_TMS__GPIO1_IO11 0x1b0b0 // rotary (+)
+		>;
+	 };
+
+	 pinctrl_rotary_encoder_key: rotarykeygrp {
+		fsl,pins = <
+			MX6UL_PAD_SNVS_TAMPER8__GPIO5_IO08 	0x1b0b0
+		>;
+	 };
  
 	 pinctrl_ecspi1: ecspi1grp {
 		 fsl,pins = <
