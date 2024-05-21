@@ -1,0 +1,24 @@
+/*
+ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+ /dts-v1/;
+
+ #include "imx6ul-invsom-256m-arc.dts"
+ 
+ 
+ / {
+	 model = "Freescale i.MX6 UltraLite Inventron SOM 1GB";
+	 compatible = "fsl,imx6ul-invsom", "fsl,imx6ul";
+ 
+	 memory@80000000 {
+		 device_type = "memory";
+		 reg = <0x80000000 0x40000000>; /* 1 GB RAM*/
+	 };
+
+ };
+ 
