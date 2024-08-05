@@ -1981,6 +1981,106 @@ static const struct spi_device_id mcp251xfd_id_table[] = {
 };
 MODULE_DEVICE_TABLE(spi, mcp251xfd_id_table);
 
+/* Can message filter configuration */
+
+static ssize_t filter_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    struct mcp251xfd_priv *priv = dev_get_drvdata(dev);
+    struct mcp251xfd_rx_ring *rx_ring;
+    u32 val;
+    ssize_t count = 0;
+    int n;
+
+    if (!priv) {
+        return -EFAULT;
+    }
+
+    mcp251xfd_for_each_rx_ring(priv, rx_ring, n) {
+        regmap_read(priv->map_reg, MCP251XFD_REG_FLTCON(rx_ring->nr >> 2), &val);
+        count += scnprintf(buf + count, PAGE_SIZE - count, "FIFO %d : MCP251XFD_REG_FLTCON: %04x\n", rx_ring->fifo_nr, val);
+
+        regmap_read(priv->map_reg, MCP251XFD_REG_FLTOBJ(rx_ring->nr), &val);
+        count += scnprintf(buf + count, PAGE_SIZE - count, "FIFO %d : MCP251XFD_REG_FLTOBJ: %04x\n", rx_ring->fifo_nr, val);
+
+        regmap_read(priv->map_reg, MCP251XFD_REG_FLTMASK(rx_ring->nr), &val);
+        count += scnprintf(buf + count, PAGE_SIZE - count, "FIFO %d : MCP251XFD_REG_FLTMASK: %04x\n", rx_ring->fifo_nr, val);
+    }
+
+    return count;
+}
+
+static ssize_t filter_store(struct device *dev,
+			    struct device_attribute *attr,
+			    const char *buf, size_t count)
+{
+	struct mcp251xfd_priv *priv = dev_get_drvdata(dev);
+	struct mcp251xfd_rx_ring *rx_ring;
+	int fifo_num;
+	u32 obj_val;
+	u32 mask_val;
+	int err, n;
+	int matched = 0;
+
+	err = sscanf(buf, "%d %x %x", &fifo_num, &obj_val, &mask_val);
+	if (err != 3)
+		return -EINVAL;
+
+	mcp251xfd_for_each_rx_ring(priv, rx_ring, n) {
+		if (rx_ring->fifo_nr == fifo_num) {
+			matched = 1;
+			break;
+		}
+	}
+
+	if (!matched) {
+		pr_err("Invalid FIFO number: %d\n", fifo_num);
+		return -EINVAL;
+	}
+
+	/* Disable the filter first */
+	err = regmap_update_bits(priv->map_reg,
+				 MCP251XFD_REG_FLTCON(rx_ring->nr >> 2),
+				 MCP251XFD_REG_FLTCON_FLTEN(rx_ring->nr), 0);
+	if (err)
+		return err;
+
+	/* Set the filter object value */
+	err = regmap_update_bits(priv->map_reg,
+				 MCP251XFD_REG_FLTOBJ(rx_ring->nr),
+				 MCP251XFD_REG_FLTOBJ_SID_MASK,
+				 obj_val);
+	if (err)
+		return err;
+
+	/* Set the filter mask value */
+	err = regmap_update_bits(priv->map_reg,
+				 MCP251XFD_REG_FLTMASK(rx_ring->nr),
+				 MCP251XFD_REG_MASK_MSID_MASK,
+				 mask_val);
+	if (err)
+		return err;
+
+	/* Enable the filter */
+	err = regmap_update_bits(priv->map_reg,
+				 MCP251XFD_REG_FLTCON(rx_ring->nr >> 2),
+				 MCP251XFD_REG_FLTCON_FLTEN(rx_ring->nr),
+				 MCP251XFD_REG_FLTCON_FLTEN(rx_ring->nr));
+	if (err)
+		return err;
+
+	pr_info("FIFO %d : MCP251XFD_REG_FLTCON[%#x] = 0x%08x (Enabled)\n",
+		fifo_num, MCP251XFD_REG_FLTCON(rx_ring->nr >> 2),
+		MCP251XFD_REG_FLTCON_FLTEN(rx_ring->nr));
+
+	return count;
+}
+
+
+
+static DEVICE_ATTR_RW(filter);
+
+
+
 static int mcp251xfd_probe(struct spi_device *spi)
 {
 	const void *match;
@@ -1992,6 +2092,12 @@ static int mcp251xfd_probe(struct spi_device *spi)
 	bool pll_enable = false;
 	u32 freq = 0;
 	int err;
+
+	/* Create sysfs file for filter*/
+	err = device_create_file(&spi->dev, &dev_attr_filter);
+    if (err) {
+        pr_err("Failed to create sysfs file for filter\n");
+    }
 
 	if (!spi->irq)
 		return dev_err_probe(&spi->dev, -ENXIO,
