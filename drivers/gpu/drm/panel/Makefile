@@ -78,3 +78,4 @@ obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
 obj-$(CONFIG_DRM_PANEL_WKS_101WX001) += panel-wks-101wx001.o
 obj-$(CONFIG_DRM_PANEL_BOE_EV101) += panel-boe-b3.o
 obj-$(CONFIG_DRM_PANEL_ZS101) += panel-inv-zs101.o
+obj-$(CONFIG_DRM_PANEL_ZK070) += panel-inv-zk070.o

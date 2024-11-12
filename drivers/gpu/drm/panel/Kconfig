@@ -754,7 +754,16 @@ config DRM_PANEL_ZS101
 	help
 	  Say Y here if you want to enable support for ZS101
 	  (800x1280) DSI panel.
-	  
+
+config DRM_PANEL_ZK070
+	tristate "ZK070 1024x600 DSI video mode panel"
+	depends on OF
+	depends on DRM_MIPI_DSI
+	depends on BACKLIGHT_CLASS_DEVICE
+	help
+	  Say Y here if you want to enable support for ZK070
+	  (1024x600) DSI panel.
+
 config DRM_PANEL_BOE_EV101
 	tristate "BOE B3 EV101 1280x800 DSI video mode panel"
 	depends on OF
