@@ -233,14 +233,15 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
 	status = "okay";
-
+	num-cs = <1>;
+	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
 	mcp251xfd: can@0 {
 		compatible = "microchip,mcp251xfd";
 		clocks = <&clk_can>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_can_irq>;
 		reg = <0>;
-            	interrupts-extended = <&gpio1 8 IRQ_TYPE_LEVEL_LOW>;
+        interrupts-extended = <&gpio1 8 IRQ_TYPE_LEVEL_LOW>;
 		spi-max-frequency = <20000000>;
 		status = "okay";
 	};
@@ -980,7 +981,7 @@
 		        MX8MM_IOMUXC_ECSPI2_MISO_ECSPI2_MISO       0x140
 		        MX8MM_IOMUXC_ECSPI2_MOSI_ECSPI2_MOSI       0x140
 		        MX8MM_IOMUXC_ECSPI2_SCLK_ECSPI2_SCLK       0x140
-		        MX8MM_IOMUXC_ECSPI2_SS0_ECSPI2_SS0	   0x140
+		        MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13	       0x140    // can cs pin (it has to define as gpio (not directly ss0) for 6.1 langdale mcp251xfd)
 		>;
 	};
 
