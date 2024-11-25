@@ -10,6 +10,7 @@
 
 #include "imx6ul-invsom.dtsi"
 
+
 / {
 	model = "Freescale i.MX6 UltraLite Inventron SOM";
 	compatible = "fsl,imx6ul-invsom", "fsl,imx6ul";
@@ -150,6 +151,11 @@
 	phy-reset-active-high;
 	phy-mode = "rmii";
 	phy-handle = <&ethphy0>;
+	
+	nvmem-cells = <&fec_mac_address>;
+	nvmem-cell-names = "mac-address";
+	nvmem_macaddr_swap;
+				
 	status = "okay";
 	mdio {
 		#address-cells = <1>;
@@ -361,7 +367,7 @@
 	/*pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_wdog>;
 	fsl,ext-reset-output;*/
-	status = "okay";
+	status = "disabled";
 };
 
 &snvs_poweroff {
@@ -374,9 +380,16 @@
 
 &can1 {
 	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan0>;
+	xceiver-supply = <&reg_can_3v3>;
+	status = "okay";
+};
+
+&can2 {
+	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexcan1>;
 	xceiver-supply = <&reg_can_3v3>;
-	status = "disabled";
+	status = "okay";
 };
 
 &sim2 {
@@ -396,56 +409,76 @@
 	status = "okay";
 };
 
-&lcdif {
+&adc1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_lcdif_dat
-		     &pinctrl_lcdif_ctrl>;
-	display = <&display0>;
+	pinctrl-0 = <&pinctrl_adc1>;
+	vref-supply = <&reg_vref_3v3>;
+	num-channels = <2>;
 	status = "okay";
-	/*enable-gpio = <&gpio3 4 GPIO_ACTIVE_HIGH>;*/
-
-	display0: display@0 {
-		bits-per-pixel = <32>;
-		bus-width = <24>;
-		/*lcd_panel = "INVTFT";*/
-		status = "okay";
-		
-		display-timings {
-			native-mode = <&timing0>;
-
-			timing0: timing0 {
-				clock-frequency = <9216000>;
-				hactive = <480>;
-				vactive = <272>;
-				hfront-porch = <8>;
-				hback-porch = <43>;
-				hsync-len = <53>;
-				vback-porch = <12>;
-				vfront-porch = <8>;
-				vsync-len = <29>;
-				hsync-active = <0>;
-				vsync-active = <0>;
-				de-active = <1>;
-				pixelclk-active = <1>;
-			};
-		};
-	};
 };
+
+
+&ecspi1 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_ecspi1>;
+    fsl,spi-num-chipselects = <1>;
+    cs-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>; 
+
+    status = "okay";
+
+    icm42605: icm42605@0 {
+        compatible = "invensense,icm42605";
+        reg = <0>; // Chip select 0
+        spi-max-frequency = <1000000>; 
+        interrupt-parent = <&gpio5>;
+        interrupts = <8 IRQ_TYPE_EDGE_FALLING>; 
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_icm42605_int>;
+    };
+};
+
+
+
 
 &iomuxc {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hog_1>;
 
-	pinctrl_hog_1: hoggrp-1 {
-		fsl,pins = <
-            MX6UL_PAD_GPIO1_IO03__GPIO1_IO03            0x000010B0	/* ENET1_nINT */
-			/* MX6UL_PAD_GPIO1_IO04__GPIO1_IO04			0x000010B0  output: wifi modul 1:acik */
-			MX6UL_PAD_GPIO1_IO08__GPIO1_IO08			0x000010B0 /* gsm power 500ms 1 then 0: on */
-			
-			//MX6UL_PAD_UART1_RTS_B__GPIO1_IO19 0x1b0b1 /* input */
-			//MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x1b0b1 /* output */
-		>;
-	};
+	 pinctrl_hog_1: hoggrp-1 {
+        fsl,pins = <
+            MX6UL_PAD_GPIO1_IO03__GPIO1_IO03        0x000010B0  /* ENET1_nINT */
+            /* MX6UL_PAD_GPIO1_IO04__GPIO1_IO04    0x000010B0  output: wifi modul 1:acik */
+            MX6UL_PAD_GPIO1_IO08__GPIO1_IO08        0x000010B0  /* gsm power 500ms 1 then 0: on */
+            MX6UL_PAD_UART1_RTS_B__GPIO1_IO19       0x1b0b1 /* input */
+            MX6UL_PAD_UART1_CTS_B__GPIO1_IO18       0x1b0b1 /* output */
+            
+            /* LCD data pins reconfigured as GPIO with the same settings */
+            MX6UL_PAD_LCD_DATA00__GPIO3_IO05        0x000010B0
+            MX6UL_PAD_LCD_DATA01__GPIO3_IO06        0x000010B0
+            MX6UL_PAD_LCD_DATA02__GPIO3_IO07        0x000010B0
+            MX6UL_PAD_LCD_DATA03__GPIO3_IO08        0x000010B0
+            MX6UL_PAD_LCD_DATA04__GPIO3_IO09        0x000010B0
+            MX6UL_PAD_LCD_DATA05__GPIO3_IO10        0x000010B0
+            MX6UL_PAD_LCD_DATA06__GPIO3_IO11        0x000010B0
+            MX6UL_PAD_LCD_DATA07__GPIO3_IO12        0x000010B0
+            MX6UL_PAD_LCD_DATA08__GPIO3_IO13        0x000010B0
+            MX6UL_PAD_LCD_DATA09__GPIO3_IO14        0x000010B0
+            MX6UL_PAD_LCD_DATA10__GPIO3_IO15        0x000010B0
+            MX6UL_PAD_LCD_DATA11__GPIO3_IO16        0x000010B0
+            MX6UL_PAD_LCD_DATA12__GPIO3_IO17        0x000010B0
+            MX6UL_PAD_LCD_DATA13__GPIO3_IO18        0x000010B0
+            MX6UL_PAD_LCD_DATA14__GPIO3_IO19        0x000010B0
+            MX6UL_PAD_LCD_DATA15__GPIO3_IO20        0x000010B0
+            MX6UL_PAD_LCD_DATA16__GPIO3_IO21        0x000010B0
+            MX6UL_PAD_LCD_DATA17__GPIO3_IO22        0x000010B0
+            MX6UL_PAD_LCD_DATA18__GPIO3_IO23        0x000010B0
+            MX6UL_PAD_LCD_DATA19__GPIO3_IO24        0x000010B0
+            MX6UL_PAD_LCD_DATA20__GPIO3_IO25        0x000010B0
+            MX6UL_PAD_LCD_DATA21__GPIO3_IO26        0x000010B0
+            MX6UL_PAD_LCD_DATA22__GPIO3_IO27        0x000010B0
+            MX6UL_PAD_LCD_DATA23__GPIO3_IO28        0x000010B0
+        >;
+    };
 	
 	pinctrl_spdif: spdifgrp {
 		fsl,pins = <
@@ -468,10 +501,17 @@
 		>;
 	};
 	
-	pinctrl_flexcan1: flexcan1grp{
+	pinctrl_flexcan0: flexcan0grp{
 		fsl,pins = <
 			MX6UL_PAD_UART3_RTS_B__FLEXCAN1_RX	0x1b020
 			MX6UL_PAD_UART3_CTS_B__FLEXCAN1_TX	0x1b020
+		>;
+	};
+
+	pinctrl_flexcan1: flexcan1grp{
+		fsl,pins = <
+			MX6UL_PAD_UART2_RTS_B__FLEXCAN2_RX	0x1b020
+			MX6UL_PAD_UART2_CTS_B__FLEXCAN2_TX	0x1b020
 		>;
 	};
 	
@@ -505,7 +545,7 @@
             
 		>;
 	};
-		
+
 	pinctrl_i2c1: i2c1grp {
 		fsl,pins = <
 			MX6UL_PAD_UART4_TX_DATA__I2C1_SCL 0x4001b8b0
@@ -558,8 +598,8 @@
 		
 			MX6UL_PAD_UART1_TX_DATA__UART1_DCE_TX 0x1b0b1
 			MX6UL_PAD_UART1_RX_DATA__UART1_DCE_RX 0x1b0b1
-			MX6UL_PAD_UART1_RTS_B__UART1_DCE_RTS 0x1b0b1
-			MX6UL_PAD_UART1_CTS_B__UART1_DCE_CTS 0x1b0b1
+			/*MX6UL_PAD_UART1_RTS_B__UART1_DCE_RTS 0x1b0b1
+			MX6UL_PAD_UART1_CTS_B__UART1_DCE_CTS 0x1b0b1*/
 			
 		>;
 	};
@@ -577,7 +617,7 @@
 		fsl,pins = <
 			MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX	0x1b0b1
 			MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX	0x1b0b1
-			MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS	0x1b0b1
+			/* MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS	0x1b0b1 */
 		>;
 	};
 		
@@ -670,52 +710,35 @@
 			MX6UL_PAD_JTAG_TMS__SAI2_MCLK		0x4001b031
 		>;
 	};
-
-	pinctrl_lcdif_dat: lcdifdatgrp {
-		fsl,pins = <
-                MX6UL_PAD_LCD_DATA00__LCDIF_DATA00         0x79
-                MX6UL_PAD_LCD_DATA01__LCDIF_DATA01         0x79
-                MX6UL_PAD_LCD_DATA02__LCDIF_DATA02         0x79
-                MX6UL_PAD_LCD_DATA03__LCDIF_DATA03         0x79
-                MX6UL_PAD_LCD_DATA04__LCDIF_DATA04         0x79
-                MX6UL_PAD_LCD_DATA05__LCDIF_DATA05         0x79
-                MX6UL_PAD_LCD_DATA06__LCDIF_DATA06         0x79
-                MX6UL_PAD_LCD_DATA07__LCDIF_DATA07         0x79
-                MX6UL_PAD_LCD_DATA08__LCDIF_DATA08         0x79
-                MX6UL_PAD_LCD_DATA09__LCDIF_DATA09         0x79
-                MX6UL_PAD_LCD_DATA10__LCDIF_DATA10         0x79
-                MX6UL_PAD_LCD_DATA11__LCDIF_DATA11         0x79
-                MX6UL_PAD_LCD_DATA12__LCDIF_DATA12         0x79
-                MX6UL_PAD_LCD_DATA13__LCDIF_DATA13         0x79
-                MX6UL_PAD_LCD_DATA14__LCDIF_DATA14         0x79
-                MX6UL_PAD_LCD_DATA15__LCDIF_DATA15         0x79
-                MX6UL_PAD_LCD_DATA16__LCDIF_DATA16         0x79
-                MX6UL_PAD_LCD_DATA17__LCDIF_DATA17         0x79
-                MX6UL_PAD_LCD_DATA18__LCDIF_DATA18         0x79
-                MX6UL_PAD_LCD_DATA19__LCDIF_DATA19         0x79
-                MX6UL_PAD_LCD_DATA20__LCDIF_DATA20         0x79
-                MX6UL_PAD_LCD_DATA21__LCDIF_DATA21         0x79
-                MX6UL_PAD_LCD_DATA22__LCDIF_DATA22         0x79
-                MX6UL_PAD_LCD_DATA23__LCDIF_DATA23         0x79
-		>;
-	};
-
-	pinctrl_lcdif_ctrl: lcdifctrlgrp {
-		fsl,pins = <
-            MX6UL_PAD_LCD_CLK__LCDIF_CLK               0x79
-            MX6UL_PAD_LCD_ENABLE__LCDIF_ENABLE         0x79
-            MX6UL_PAD_LCD_HSYNC__LCDIF_HSYNC           0x79
-            /*MX6UL_PAD_LCD_RESET__LCDIF_RESET           0x79
-            MX6UL_PAD_LCD_RESET__GPIO3_IO04			   0x79*/
-            MX6UL_PAD_LCD_VSYNC__LCDIF_VSYNC           0x79
-		>;
-	};
-			
+	
 	pinctrl_wdog: wdoggrp {
 		fsl,pins = <
 			MX6UL_PAD_GPIO1_IO09__WDOG1_WDOG_ANY    0x30b0
 		>;
 	};
+
+	pinctrl_adc1: adc1grp {
+		fsl,pins = <
+			MX6UL_PAD_GPIO1_IO01__GPIO1_IO01 0xb0
+			MX6UL_PAD_GPIO1_IO05__GPIO1_IO05 0xb0
+		>;
+	};
+
+	pinctrl_ecspi1: ecspi1grp {
+  		fsl,pins = <
+			MX6UL_PAD_CSI_DATA06__ECSPI1_MOSI    0x1b0b1
+			MX6UL_PAD_CSI_DATA07__ECSPI1_MISO    0x1b0b1
+			MX6UL_PAD_CSI_DATA04__ECSPI1_SCLK    0x1b0b1
+			MX6UL_PAD_CSI_DATA05__ECSPI1_SS0    0x1b0b1
+  		>;
+  	};
+
+	pinctrl_icm42605_int: icm42605_intgrp {
+		fsl,pins = <
+			MX6UL_PAD_SNVS_TAMPER8__GPIO5_IO08 0x1b0b1 /* Interrupt pin */
+		>;
+	};
+
 };
 
 #include "imx6ul-invsom-btwifi.dtsi"
