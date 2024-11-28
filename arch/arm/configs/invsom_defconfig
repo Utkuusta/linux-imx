@@ -4735,6 +4735,8 @@ CONFIG_VF610_ADC=y
 #
 # Inertial measurement units
 #
+CONFIG_INV_ICM42600=y
+CONFIG_INV_ICM42600_SPI=y
 # CONFIG_ADIS16400 is not set
 # CONFIG_ADIS16460 is not set
 # CONFIG_ADIS16480 is not set
