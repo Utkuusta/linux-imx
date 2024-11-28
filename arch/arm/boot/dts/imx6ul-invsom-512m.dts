@@ -421,19 +421,21 @@
 &ecspi1 {
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_ecspi1>;
-    fsl,spi-num-chipselects = <1>;
+    fsl,spi-num-chipselects = <1>; // Using one chip select
     status = "okay";
+    cs-gpios = <0>; // Indicates hardware-controlled chip select
 
-    icm42605: icm42605@0 {
-        compatible = "invensense,icm42605";
+    icm42605: spi@0 {
         reg = <0>; // Chip select 0
-        spi-max-frequency = <1000000>;
+        compatible = "invensense,icm42605";
+        spi-max-frequency = <1000000>; // 1 MHz for ICM-42605
         interrupt-parent = <&gpio5>;
-        interrupts = <8 IRQ_TYPE_EDGE_FALLING>;
+        interrupts = <8 IRQ_TYPE_EDGE_FALLING>; // Adjust based on your INT pin wiring
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_icm42605_int>;
     };
 };
+
 
 
 
