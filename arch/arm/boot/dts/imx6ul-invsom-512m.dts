@@ -422,20 +422,19 @@
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_ecspi1>;
     fsl,spi-num-chipselects = <1>;
-    cs-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>; 
-
     status = "okay";
 
     icm42605: icm42605@0 {
         compatible = "invensense,icm42605";
         reg = <0>; // Chip select 0
-        spi-max-frequency = <1000000>; 
+        spi-max-frequency = <1000000>;
         interrupt-parent = <&gpio5>;
-        interrupts = <8 IRQ_TYPE_EDGE_FALLING>; 
+        interrupts = <8 IRQ_TYPE_EDGE_FALLING>;
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_icm42605_int>;
     };
 };
+
 
 
 
