@@ -52,6 +52,8 @@
 		usbphy0 = &usbphy1;
 		usbphy1 = &usbphy2;
 		battery0 = &bat;
+		adc1 = &adc1;
+		adc12 = &adc2;
 	};
 	
 	bat: battery {
